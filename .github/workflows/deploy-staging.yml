@@ -50,6 +50,7 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     outputs:
       image_tag: ${{ steps.tag.outputs.tag }}
+      skip_deploy: ${{ steps.check_services.outputs.skip_deploy }}
     steps:
       - name: Determine image tag
         id: tag
@@ -60,14 +61,38 @@ jobs:
             echo "tag=${{ github.sha }}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Verify images exist in registry
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check services and images
+        id: check_services
         run: |
           TAG="${{ steps.tag.outputs.tag }}"
+          SERVICES_EXIST=false
+
           for service in brand-service campaign-service enforcement-engine; do
-            echo "Checking $service:$TAG..."
-            docker manifest inspect ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${service}:${TAG} || \
-              docker manifest inspect ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${service}:latest
+            # Check if service directory exists in repo
+            if [ -d "backend/services/$service" ]; then
+              SERVICES_EXIST=true
+              echo "Checking $service:$TAG in registry..."
+              if docker manifest inspect ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${service}:${TAG} 2>/dev/null || \
+                 docker manifest inspect ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${service}:latest 2>/dev/null; then
+                echo "  ✓ Image found"
+              else
+                echo "::error::Image for $service not found in registry"
+                exit 1
+              fi
+            else
+              echo "::notice::Service $service not yet implemented, skipping"
+            fi
           done
+
+          if [ "$SERVICES_EXIST" = "false" ]; then
+            echo "::notice::No services implemented yet. Skipping deployment."
+            echo "skip_deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip_deploy=false" >> $GITHUB_OUTPUT
+          fi
         env:
           DOCKER_CLI_EXPERIMENTAL: enabled
 
@@ -78,6 +103,7 @@ jobs:
     name: Deploy to Staging VPS
     runs-on: ubuntu-latest
     needs: pre-deploy
+    if: needs.pre-deploy.outputs.skip_deploy != 'true'
     environment:
       name: staging
       url: https://api.staging.skyie.io
