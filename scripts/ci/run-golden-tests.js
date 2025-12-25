@@ -42,14 +42,14 @@ const GOLDEN_TESTS_PATH =
   process.env.GOLDEN_TESTS_PATH || 'backend/tests/golden/golden-tests.yaml';
 const REPORTS_DIR = 'reports/golden-tests';
 
-let stats = {
+const stats = {
   total: 0,
   passed: 0,
   failed: 0,
   skipped: 0,
 };
 
-let results = [];
+const results = [];
 
 /**
  * Load golden tests from YAML file
@@ -78,7 +78,7 @@ function loadGoldenTests() {
  * In a real implementation, this would call the actual enforcement service
  */
 function validateContent(testCase) {
-  const { input, context, expected } = testCase;
+  const { input, context } = testCase;
 
   // This is a placeholder for the actual enforcement engine
   // It simulates the validation logic based on test case category

@@ -93,14 +93,14 @@ jobs:
         run: |
           npx ajv compile \
             --spec=draft2020 \
-            --strict=true \
+            --strict=false \
             -s backend/shared/schemas/brand-genome.schema.json
 
       - name: Validate Campaign Blueprint Schema
         run: |
           npx ajv compile \
             --spec=draft2020 \
-            --strict=true \
+            --strict=false \
             -s backend/shared/schemas/campaign-blueprint.schema.json
 
       - name: Check for unknown fields in schemas

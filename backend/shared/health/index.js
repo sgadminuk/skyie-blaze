@@ -13,8 +13,6 @@
  * =============================================================================
  */
 
-const os = require('os');
-
 // Health status enum
 const HealthStatus = {
   HEALTHY: 'healthy',

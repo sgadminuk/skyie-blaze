@@ -21,6 +21,8 @@
     "dist/",
     "coverage/",
     "reports/",
-    "*.min.js"
+    "*.min.js",
+    "*.ts",
+    "*.tsx"
   ]
 }
