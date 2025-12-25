@@ -1,0 +1,103 @@
+# =============================================================================
+# Skyie Blaze - Git Ignore
+# =============================================================================
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Environment files (NEVER commit these)
+.env
+.env.local
+.env.staging
+.env.production
+.env.*.local
+!.env.example
+!.env.*.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage & test reports
+coverage/
+reports/
+.nyc_output/
+*.lcov
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+*.docker-env
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Secrets (CRITICAL - never commit)
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+credentials/
+.secrets
+
+# Database
+*.sql.gz
+*.dump
+data/
+
+# Storage
+storage/
+uploads/
+
+# Cache
+.cache/
+.parcel-cache/
+.eslintcache
+
+# Debug
+.debug/
+
+# Terraform state (if using)
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Misc
+*.bak
+*.backup

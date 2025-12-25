@@ -1,0 +1,946 @@
+openapi: 3.1.0
+info:
+  title: Skyie Marketing OS API
+  version: 1.0.0
+  description: Brand-governed autonomous marketing platform API
+servers:
+  - url: https://api.skyie.io/v1
+security:
+  - BearerAuth: []
+
+paths:
+  /brands:
+    get:
+      tags: [Brands]
+      summary: List all brands
+      operationId: listBrands
+      responses:
+        '200':
+          description: List of brands
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandList'
+    post:
+      tags: [Brands]
+      summary: Create new brand genome
+      operationId: createBrand
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrandGenomeCreate'
+      responses:
+        '201':
+          description: Brand created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandGenome'
+
+  /brands/{brandId}:
+    get:
+      tags: [Brands]
+      summary: Get brand genome
+      operationId: getBrand
+      parameters:
+        - name: brandId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Brand genome
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandGenome'
+    patch:
+      tags: [Brands]
+      summary: Update brand genome
+      operationId: updateBrand
+      parameters:
+        - name: brandId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrandGenomePatch'
+      responses:
+        '200':
+          description: Updated brand
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandGenome'
+
+  /brands/{brandId}/extract:
+    post:
+      tags: [Brands]
+      summary: Trigger brand extraction
+      operationId: extractBrand
+      parameters:
+        - name: brandId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtractionRequest'
+      responses:
+        '202':
+          description: Extraction started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractionJob'
+
+  /campaigns:
+    get:
+      tags: [Campaigns]
+      summary: List campaigns
+      operationId: listCampaigns
+      responses:
+        '200':
+          description: Campaign list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignList'
+    post:
+      tags: [Campaigns]
+      summary: Create campaign
+      operationId: createCampaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignBlueprintCreate'
+      responses:
+        '201':
+          description: Campaign created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignBlueprint'
+
+  /campaigns/{campaignId}:
+    get:
+      tags: [Campaigns]
+      summary: Get campaign
+      operationId: getCampaign
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Campaign details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignBlueprint'
+
+  /campaigns/{campaignId}/activate:
+    post:
+      tags: [Campaigns]
+      summary: Activate campaign
+      operationId: activateCampaign
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Campaign activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignBlueprint'
+
+  /content/generate:
+    post:
+      tags: [Content]
+      summary: Generate content
+      operationId: generateContent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentGenerationRequest'
+      responses:
+        '200':
+          description: Generated content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentGenerationResponse'
+
+  /content/{assetId}:
+    get:
+      tags: [Content]
+      summary: Get asset
+      operationId: getAsset
+      parameters:
+        - name: assetId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Asset details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+
+  /content/{assetId}/validate:
+    post:
+      tags: [Enforcement]
+      summary: Validate asset
+      operationId: validateAsset
+      parameters:
+        - name: assetId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+
+  /content/{assetId}/publish:
+    post:
+      tags: [Distribution]
+      summary: Publish asset
+      operationId: publishAsset
+      parameters:
+        - name: assetId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+      responses:
+        '202':
+          description: Publication started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicationJob'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    BrandGenome:
+      type: object
+      required: [id, version, identity, visual_identity, verbal_identity]
+      properties:
+        id:
+          type: string
+        version:
+          $ref: '#/components/schemas/Version'
+        identity:
+          $ref: '#/components/schemas/BrandIdentity'
+        visual_identity:
+          $ref: '#/components/schemas/VisualIdentity'
+        verbal_identity:
+          $ref: '#/components/schemas/VerbalIdentity'
+        compliance:
+          $ref: '#/components/schemas/ComplianceConfig'
+        audience:
+          $ref: '#/components/schemas/AudienceConfig'
+        content_strategy:
+          $ref: '#/components/schemas/ContentStrategy'
+
+    BrandGenomeCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        website_url:
+          type: string
+          format: uri
+        extraction_sources:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [website, pdf, image]
+              url:
+                type: string
+
+    BrandGenomePatch:
+      type: object
+      properties:
+        identity:
+          $ref: '#/components/schemas/BrandIdentity'
+        visual_identity:
+          $ref: '#/components/schemas/VisualIdentity'
+        verbal_identity:
+          $ref: '#/components/schemas/VerbalIdentity'
+        change_summary:
+          type: string
+
+    Version:
+      type: object
+      properties:
+        major:
+          type: integer
+        minor:
+          type: integer
+        patch:
+          type: integer
+        hash:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+
+    BrandIdentity:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        tagline:
+          type: string
+        mission_statement:
+          type: string
+        value_propositions:
+          type: array
+          items:
+            type: string
+        brand_personality:
+          type: object
+          properties:
+            archetypes:
+              type: array
+              items:
+                type: string
+            traits:
+              type: array
+              items:
+                type: string
+
+    VisualIdentity:
+      type: object
+      properties:
+        logo:
+          $ref: '#/components/schemas/LogoSystem'
+        colors:
+          $ref: '#/components/schemas/ColorSystem'
+        typography:
+          $ref: '#/components/schemas/TypographySystem'
+
+    LogoSystem:
+      type: object
+      properties:
+        primary:
+          type: object
+          properties:
+            url:
+              type: string
+            format:
+              type: string
+        variants:
+          type: array
+          items:
+            type: object
+
+    ColorSystem:
+      type: object
+      properties:
+        primary:
+          $ref: '#/components/schemas/BrandColor'
+        secondary:
+          type: array
+          items:
+            $ref: '#/components/schemas/BrandColor'
+        accent:
+          type: array
+          items:
+            $ref: '#/components/schemas/BrandColor'
+
+    BrandColor:
+      type: object
+      required: [hex]
+      properties:
+        name:
+          type: string
+        hex:
+          type: string
+          pattern: '^#[A-Fa-f0-9]{6}$'
+        usage:
+          type: array
+          items:
+            type: string
+
+    TypographySystem:
+      type: object
+      properties:
+        primary_font:
+          type: object
+          properties:
+            family:
+              type: string
+            weights_available:
+              type: array
+              items:
+                type: integer
+        hierarchy:
+          type: object
+
+    VerbalIdentity:
+      type: object
+      properties:
+        voice:
+          $ref: '#/components/schemas/VoiceParameters'
+        vocabulary:
+          $ref: '#/components/schemas/VocabularyRules'
+        messaging:
+          $ref: '#/components/schemas/MessagingFramework'
+
+    VoiceParameters:
+      type: object
+      properties:
+        formality:
+          type: number
+          minimum: 0
+          maximum: 1
+        technical_level:
+          type: number
+          minimum: 0
+          maximum: 1
+        warmth:
+          type: number
+          minimum: 0
+          maximum: 1
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        humor:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    VocabularyRules:
+      type: object
+      properties:
+        preferred:
+          type: array
+          items:
+            type: string
+        avoid:
+          type: array
+          items:
+            type: string
+        banned:
+          type: array
+          items:
+            type: string
+
+    MessagingFramework:
+      type: object
+      properties:
+        taglines:
+          type: array
+          items:
+            type: string
+        elevator_pitch:
+          type: string
+        value_props:
+          type: array
+          items:
+            type: object
+
+    ComplianceConfig:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        jurisdictions:
+          type: array
+          items:
+            type: string
+        industry_regulations:
+          type: array
+          items:
+            type: string
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComplianceRule'
+        prohibited_claims:
+          type: array
+          items:
+            type: string
+
+    ComplianceRule:
+      type: object
+      properties:
+        rule_id:
+          type: string
+        description:
+          type: string
+        enforcement:
+          type: string
+          enum: [block, warn, log]
+
+    AudienceConfig:
+      type: object
+      properties:
+        personas:
+          type: array
+          items:
+            $ref: '#/components/schemas/Persona'
+
+    Persona:
+      type: object
+      properties:
+        persona_id:
+          type: string
+        name:
+          type: string
+        demographics:
+          type: object
+        psychographics:
+          type: object
+
+    ContentStrategy:
+      type: object
+      properties:
+        pillars:
+          type: array
+          items:
+            type: object
+        forbidden_zones:
+          type: array
+          items:
+            type: string
+
+    CampaignBlueprint:
+      type: object
+      required: [id, metadata, brand_genome_ref, objective, timing, channel_strategy]
+      properties:
+        id:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/CampaignMetadata'
+        brand_genome_ref:
+          type: string
+        objective:
+          $ref: '#/components/schemas/CampaignObjective'
+        timing:
+          $ref: '#/components/schemas/CampaignTiming'
+        target_audience:
+          $ref: '#/components/schemas/TargetAudience'
+        messaging:
+          $ref: '#/components/schemas/CampaignMessaging'
+        channel_strategy:
+          $ref: '#/components/schemas/ChannelStrategy'
+
+    CampaignBlueprintCreate:
+      type: object
+      required: [name, brand_genome_ref, objective_type]
+      properties:
+        name:
+          type: string
+        brand_genome_ref:
+          type: string
+        objective_type:
+          type: string
+          enum: [awareness, consideration, conversion, retention]
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+
+    CampaignMetadata:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [draft, scheduled, active, paused, completed, archived]
+        created_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+
+    CampaignObjective:
+      type: object
+      properties:
+        type:
+          type: string
+        primary_kpi:
+          $ref: '#/components/schemas/KPI'
+
+    KPI:
+      type: object
+      properties:
+        metric:
+          type: string
+        target:
+          type: number
+        timeframe_days:
+          type: integer
+
+    CampaignTiming:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [finite, perpetual, recurring]
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+        phases:
+          type: array
+          items:
+            type: object
+
+    TargetAudience:
+      type: object
+      properties:
+        primary_persona_refs:
+          type: array
+          items:
+            type: string
+
+    CampaignMessaging:
+      type: object
+      properties:
+        key_message:
+          type: string
+        supporting_messages:
+          type: array
+          items:
+            type: string
+        cta_primary:
+          type: object
+          properties:
+            text:
+              type: string
+            url:
+              type: string
+
+    ChannelStrategy:
+      type: object
+      properties:
+        channels:
+          type: array
+          items:
+            type: object
+            properties:
+              channel:
+                type: string
+              role:
+                type: string
+                enum: [primary, secondary]
+              frequency:
+                type: object
+
+    Asset:
+      type: object
+      properties:
+        id:
+          type: string
+        metadata:
+          type: object
+        lineage:
+          $ref: '#/components/schemas/AssetLineage'
+        content:
+          $ref: '#/components/schemas/AssetContent'
+        compliance_state:
+          $ref: '#/components/schemas/ComplianceState'
+        publication_state:
+          $ref: '#/components/schemas/PublicationState'
+
+    AssetLineage:
+      type: object
+      properties:
+        brand_genome_ref:
+          type: string
+        brand_genome_hash:
+          type: string
+        campaign_ref:
+          type: string
+        ai_model:
+          type: object
+          properties:
+            provider:
+              type: string
+            model:
+              type: string
+            temperature:
+              type: number
+
+    AssetContent:
+      type: object
+      properties:
+        type:
+          type: string
+        format:
+          type: string
+        primary_text:
+          type: string
+        headline:
+          type: string
+        cta_text:
+          type: string
+        cta_url:
+          type: string
+
+    ComplianceState:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, approved, rejected, requires_revision]
+        violations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Violation'
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Warning'
+
+    PublicationState:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [draft, scheduled, published, unpublished, failed]
+        scheduled_for:
+          type: string
+          format: date-time
+        published_at:
+          type: string
+          format: date-time
+        published_to:
+          type: array
+          items:
+            type: object
+
+    ValidationResult:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        score:
+          type: number
+          minimum: 0
+          maximum: 1
+        violations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Violation'
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Warning'
+        suggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Suggestion'
+
+    Violation:
+      type: object
+      properties:
+        rule_id:
+          type: string
+        severity:
+          type: string
+          enum: [error, critical]
+        message:
+          type: string
+        field:
+          type: string
+        value:
+          type: string
+
+    Warning:
+      type: object
+      properties:
+        rule_id:
+          type: string
+        message:
+          type: string
+        field:
+          type: string
+
+    Suggestion:
+      type: object
+      properties:
+        type:
+          type: string
+        message:
+          type: string
+        suggested_value:
+          type: string
+
+    ContentGenerationRequest:
+      type: object
+      required: [brand_genome_ref, content_type, brief]
+      properties:
+        brand_genome_ref:
+          type: string
+        campaign_ref:
+          type: string
+        content_type:
+          type: string
+          enum: [linkedin_post, instagram_post, twitter_post, email, blog_post]
+        brief:
+          type: string
+        variation_count:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 1
+        constraints:
+          type: object
+
+    ContentGenerationResponse:
+      type: object
+      properties:
+        request_id:
+          type: string
+        assets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Asset'
+        generation_metadata:
+          type: object
+
+    PublishRequest:
+      type: object
+      required: [platforms]
+      properties:
+        platforms:
+          type: array
+          items:
+            type: string
+        scheduled_for:
+          type: string
+          format: date-time
+
+    PublicationJob:
+      type: object
+      properties:
+        job_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, in_progress, completed, failed]
+        platforms:
+          type: array
+          items:
+            type: object
+
+    ExtractionRequest:
+      type: object
+      properties:
+        sources:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              url:
+                type: string
+        fields_to_extract:
+          type: array
+          items:
+            type: string
+
+    ExtractionJob:
+      type: object
+      properties:
+        job_id:
+          type: string
+        status:
+          type: string
+        progress:
+          type: number
+        estimated_completion:
+          type: string
+          format: date-time
+
+    BrandList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BrandGenome'
+        next_page_token:
+          type: string
+
+    CampaignList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CampaignBlueprint'
+        next_page_token:
+          type: string
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object

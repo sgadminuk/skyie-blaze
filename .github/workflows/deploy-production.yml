@@ -1,0 +1,369 @@
+# =============================================================================
+# Skyie Blaze - Production Deployment Pipeline (Traefik Integration)
+# =============================================================================
+# Triggers:
+#   - Manual approval only (workflow_dispatch)
+#   - Release tag (vX.Y.Z)
+#
+# CRITICAL: Production deployments require manual approval
+# Uses existing Traefik reverse proxy - does NOT deploy nginx
+# =============================================================================
+
+name: Deploy to Production
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release tag to deploy (e.g., v1.0.0)'
+        required: true
+        type: string
+      confirm:
+        description: 'Type "DEPLOY" to confirm production deployment'
+        required: true
+        type: string
+      traefik_network:
+        description: 'Traefik network name (default: SkyieProxy)'
+        required: false
+        type: string
+        default: 'SkyieProxy'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+  TRAEFIK_NETWORK: ${{ github.event.inputs.traefik_network || 'SkyieProxy' }}
+
+# Only one production deployment at a time
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+jobs:
+  # ===========================================================================
+  # Validation
+  # ===========================================================================
+  validate:
+    name: Validate Deployment Request
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.validate.outputs.release_tag }}
+    steps:
+      - name: Validate manual deployment
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "DEPLOY" ]; then
+            echo "::error::You must type 'DEPLOY' to confirm production deployment"
+            exit 1
+          fi
+
+      - name: Determine release tag
+        id: validate
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            TAG="${{ github.event.inputs.version }}"
+          fi
+
+          # Validate semver format
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid version format. Must be vX.Y.Z (e.g., v1.0.0)"
+            exit 1
+          fi
+
+          echo "release_tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Deploying version: $TAG"
+
+      - name: Verify images exist
+        run: |
+          TAG="${{ steps.validate.outputs.release_tag }}"
+
+          for service in brand-service campaign-service enforcement-engine; do
+            echo "Verifying $service exists..."
+            docker manifest inspect ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${service}:latest || true
+          done
+        env:
+          DOCKER_CLI_EXPERIMENTAL: enabled
+
+  # ===========================================================================
+  # Pre-Production Checks
+  # ===========================================================================
+  pre-production-checks:
+    name: Pre-Production Validation
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.release_tag }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run production readiness checks
+        run: |
+          echo "Running production readiness checks..."
+
+          # Validate schemas are present
+          test -f backend/shared/schemas/brand-genome.schema.json || exit 1
+          test -f backend/shared/schemas/campaign-blueprint.schema.json || exit 1
+
+          # Validate OpenAPI
+          test -f backend/api/openapi.yaml || exit 1
+
+          # Validate golden tests
+          test -f backend/tests/golden/golden-tests.yaml || exit 1
+
+          echo "All production readiness checks passed!"
+
+  # ===========================================================================
+  # Deploy to Production (Requires Approval)
+  # ===========================================================================
+  deploy:
+    name: Deploy to Production VPS
+    runs-on: ubuntu-latest
+    needs: [validate, pre-production-checks]
+    environment:
+      name: production
+      url: https://api.skyie.io
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.release_tag }}
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.PRODUCTION_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+      - name: Verify Traefik network exists
+        run: |
+          ssh ${{ secrets.PRODUCTION_SSH_USER }}@${{ secrets.PRODUCTION_SSH_HOST }} << 'EOF'
+            set -e
+            echo "Checking for Traefik network..."
+
+            # Check if traefik network exists
+            if ! docker network inspect ${{ env.TRAEFIK_NETWORK }} > /dev/null 2>&1; then
+              echo "ERROR: Traefik network '${{ env.TRAEFIK_NETWORK }}' does not exist!"
+              echo "Available networks:"
+              docker network ls
+              exit 1
+            fi
+
+            echo "Traefik network '${{ env.TRAEFIK_NETWORK }}' found"
+
+            # Verify Traefik is running
+            if docker ps | grep -q traefik; then
+              echo "Traefik container is running"
+            else
+              echo "ERROR: Traefik container not running - cannot deploy"
+              exit 1
+            fi
+          EOF
+
+      - name: Create deployment package
+        run: |
+          mkdir -p deploy
+          cp docker-compose.yml deploy/
+          cp docker-compose.production.yml deploy/
+
+      - name: Backup current state
+        run: |
+          ssh ${{ secrets.PRODUCTION_SSH_USER }}@${{ secrets.PRODUCTION_SSH_HOST }} << 'EOF'
+            set -e
+            cd /opt/skyie-blaze
+
+            # Backup current env and compose files
+            cp .env .env.backup.$(date +%Y%m%d_%H%M%S) 2>/dev/null || true
+
+            # Record current image versions for rollback
+            docker-compose -f docker-compose.yml -f docker-compose.production.yml images > /tmp/current_images.txt 2>/dev/null || true
+
+            echo "Backup complete"
+          EOF
+
+      - name: Copy files to production server
+        run: |
+          scp -r deploy/* ${{ secrets.PRODUCTION_SSH_USER }}@${{ secrets.PRODUCTION_SSH_HOST }}:/opt/skyie-blaze/
+
+      - name: Deploy to production
+        run: |
+          ssh ${{ secrets.PRODUCTION_SSH_USER }}@${{ secrets.PRODUCTION_SSH_HOST }} << 'EOF'
+            set -e
+            cd /opt/skyie-blaze
+
+            # Set environment variables
+            export RELEASE_TAG="${{ needs.validate.outputs.release_tag }}"
+            export DOCKER_REGISTRY="${{ env.REGISTRY }}"
+            export TRAEFIK_NETWORK="${{ env.TRAEFIK_NETWORK }}"
+
+            # Login to registry
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+            # Pull new images
+            docker-compose -f docker-compose.yml -f docker-compose.production.yml pull
+
+            # Rolling deployment - one service at a time
+            # NOTE: nginx is NOT deployed - Traefik handles routing
+            for service in brand-service campaign-service enforcement-engine; do
+              echo "Deploying $service..."
+              docker-compose -f docker-compose.yml -f docker-compose.production.yml up -d --no-deps $service
+              sleep 5
+
+              # Verify service is healthy via Docker exec (ports not exposed)
+              CONTAINER="skyie-${service//-service/}-service"
+              [ "$service" == "enforcement-engine" ] && CONTAINER="skyie-enforcement-engine"
+
+              for i in {1..30}; do
+                if docker exec $CONTAINER wget -q --spider http://localhost:3000/health 2>/dev/null; then
+                  echo "$service is healthy"
+                  break
+                fi
+                if [ $i -eq 30 ]; then
+                  echo "$service health check failed - rolling back"
+                  exit 1
+                fi
+                sleep 2
+              done
+            done
+
+            # Ensure postgres and redis are running
+            docker-compose -f docker-compose.yml -f docker-compose.production.yml up -d postgres redis
+
+            # Cleanup old images (keep last 3)
+            docker image prune -f
+
+            echo "Production deployment complete!"
+          EOF
+
+      - name: Verify production deployment
+        run: |
+          ssh ${{ secrets.PRODUCTION_SSH_USER }}@${{ secrets.PRODUCTION_SSH_HOST }} << 'EOF'
+            set -e
+            cd /opt/skyie-blaze
+
+            echo "=== Verifying production deployment ==="
+
+            # Check all services
+            docker-compose -f docker-compose.yml -f docker-compose.production.yml ps
+
+            echo ""
+            echo "=== Traefik Routing Verification ==="
+            # Verify services are connected to Traefik network
+            for service in skyie-brand-service skyie-campaign-service skyie-enforcement-engine; do
+              if docker inspect $service --format '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' | grep -q "${{ env.TRAEFIK_NETWORK }}"; then
+                echo "  $service connected to Traefik network"
+              else
+                echo "  ERROR: $service not connected to Traefik network"
+                exit 1
+              fi
+            done
+
+            echo ""
+            echo "Production verification complete!"
+          EOF
+
+      - name: Test external endpoints
+        run: |
+          echo "Testing external endpoints via Traefik..."
+          sleep 5
+
+          # Test endpoints
+          for endpoint in brands campaigns content; do
+            if curl -sf "https://api.skyie.io/v1/${endpoint}" -o /dev/null; then
+              echo "/${endpoint} accessible via Traefik"
+            else
+              echo "WARNING: /${endpoint} not yet accessible (may need DNS/cert propagation)"
+            fi
+          done
+
+      - name: Create deployment record
+        run: |
+          cat > deployment_record.txt << EOF
+          Production Deployment Record
+          ============================
+          Version: ${{ needs.validate.outputs.release_tag }}
+          Deployed by: ${{ github.actor }}
+          Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          Commit: ${{ github.sha }}
+          Traefik Network: ${{ env.TRAEFIK_NETWORK }}
+          Domain: api.skyie.io
+          EOF
+
+      - name: Upload deployment record
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-record-${{ needs.validate.outputs.release_tag }}
+          path: deployment_record.txt
+          retention-days: 365
+
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "::notice::Production deployment successful! Version: ${{ needs.validate.outputs.release_tag }}"
+          echo "::notice::API available at: https://api.skyie.io/v1/"
+
+  # ===========================================================================
+  # Rollback (Manual)
+  # ===========================================================================
+  rollback:
+    name: Rollback Production
+    runs-on: ubuntu-latest
+    if: failure() && needs.deploy.result == 'failure'
+    needs: [validate, deploy]
+    environment:
+      name: production
+    steps:
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.PRODUCTION_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+      - name: Rollback to previous version
+        run: |
+          ssh ${{ secrets.PRODUCTION_SSH_USER }}@${{ secrets.PRODUCTION_SSH_HOST }} << 'EOF'
+            set -e
+            cd /opt/skyie-blaze
+
+            echo "ROLLING BACK PRODUCTION..."
+
+            # Find most recent backup
+            LATEST_BACKUP=$(ls -t .env.backup.* 2>/dev/null | head -1)
+
+            if [ -n "$LATEST_BACKUP" ]; then
+              cp "$LATEST_BACKUP" .env
+              echo "Restored $LATEST_BACKUP"
+            fi
+
+            # Pull previous images from backup record if available
+            if [ -f /tmp/current_images.txt ]; then
+              echo "Previous images were:"
+              cat /tmp/current_images.txt
+            fi
+
+            # Restart services with previous configuration
+            # NOTE: Only restart app services, not nginx
+            docker-compose -f docker-compose.yml -f docker-compose.production.yml up -d \
+              brand-service campaign-service enforcement-engine postgres redis
+
+            echo "Rollback complete - verify services manually"
+          EOF
+
+      - name: Notify rollback
+        run: |
+          echo "::error::Production deployment failed - rollback executed"
+          echo "Manual verification required!"

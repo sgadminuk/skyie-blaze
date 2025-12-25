@@ -1,0 +1,723 @@
+# Skyie Marketing OS - Enforcement Engine Test Suite
+# Golden files for validation testing
+
+## Test Structure
+# Each test case includes:
+# - input: The content/asset being validated
+# - context: Brand genome and campaign references
+# - expected: Expected validation result
+
+---
+
+# =============================================================================
+# SECTION 1: BRAND COLOR VALIDATION
+# =============================================================================
+
+test_cases:
+
+  # ---------------------------------------------------------------------------
+  # Color Tests
+  # ---------------------------------------------------------------------------
+  
+  - id: "color_001_valid_primary"
+    name: "Valid primary brand color"
+    category: "brand.visual.colors"
+    input:
+      asset_type: "social_post_image"
+      colors_used:
+        - "#1A73E8"  # Primary brand color
+        - "#FFFFFF"  # White background
+    context:
+      brand_genome:
+        visual_identity:
+          colors:
+            primary:
+              hex: "#1A73E8"
+            neutral:
+              background: "#FFFFFF"
+    expected:
+      valid: true
+      violations: []
+      warnings: []
+
+  - id: "color_002_invalid_off_brand"
+    name: "Off-brand color detected"
+    category: "brand.visual.colors"
+    input:
+      asset_type: "social_post_image"
+      colors_used:
+        - "#1A73E8"
+        - "#FF5733"  # Not in brand palette
+    context:
+      brand_genome:
+        visual_identity:
+          colors:
+            primary:
+              hex: "#1A73E8"
+            secondary: []
+            accent: []
+    expected:
+      valid: false
+      violations:
+        - rule_id: "brand_color_check"
+          severity: "error"
+          message: "Color #FF5733 is not in brand palette"
+          field: "colors_used[1]"
+          suggested_fix:
+            type: "nearest_palette_color"
+            value: "#EA4335"  # Nearest semantic error color
+
+  - id: "color_003_similar_color_warning"
+    name: "Similar but not exact brand color"
+    category: "brand.visual.colors"
+    input:
+      asset_type: "social_post_image"
+      colors_used:
+        - "#1B74E9"  # Very close to primary but not exact
+    context:
+      brand_genome:
+        visual_identity:
+          colors:
+            primary:
+              hex: "#1A73E8"
+    expected:
+      valid: true
+      violations: []
+      warnings:
+        - rule_id: "brand_color_approximate"
+          message: "Color #1B74E9 is similar to brand primary #1A73E8. Consider using exact value."
+          field: "colors_used[0]"
+
+  - id: "color_004_contrast_violation"
+    name: "Insufficient contrast for accessibility"
+    category: "brand.visual.colors.accessibility"
+    input:
+      asset_type: "social_post_image"
+      text_color: "#1A73E8"
+      background_color: "#4285F4"  # Blue on blue - poor contrast
+    context:
+      brand_genome:
+        visual_identity:
+          colors:
+            primary:
+              hex: "#1A73E8"
+              accessibility:
+                wcag_aa_on_white: true
+    expected:
+      valid: false
+      violations:
+        - rule_id: "wcag_contrast_aa"
+          severity: "error"
+          message: "Text contrast ratio 1.8:1 is below WCAG AA minimum of 4.5:1"
+          field: "text_color"
+          suggested_fix:
+            type: "use_accessible_combination"
+            value:
+              text_color: "#FFFFFF"
+              background_color: "#1A73E8"
+
+  # ---------------------------------------------------------------------------
+  # Typography Tests
+  # ---------------------------------------------------------------------------
+
+  - id: "typo_001_valid_font"
+    name: "Valid brand font"
+    category: "brand.visual.typography"
+    input:
+      asset_type: "social_post_image"
+      fonts_used:
+        - family: "Inter"
+          weight: 600
+    context:
+      brand_genome:
+        visual_identity:
+          typography:
+            primary_font:
+              family: "Inter"
+              weights_available: [400, 500, 600, 700]
+    expected:
+      valid: true
+      violations: []
+      warnings: []
+
+  - id: "typo_002_invalid_font_family"
+    name: "Non-brand font used"
+    category: "brand.visual.typography"
+    input:
+      asset_type: "social_post_image"
+      fonts_used:
+        - family: "Comic Sans MS"
+          weight: 400
+    context:
+      brand_genome:
+        visual_identity:
+          typography:
+            primary_font:
+              family: "Inter"
+            secondary_font:
+              family: "Georgia"
+    expected:
+      valid: false
+      violations:
+        - rule_id: "brand_font_check"
+          severity: "error"
+          message: "Font 'Comic Sans MS' is not an approved brand font"
+          field: "fonts_used[0].family"
+          suggested_fix:
+            type: "use_brand_font"
+            value: "Inter"
+
+  - id: "typo_003_invalid_font_weight"
+    name: "Invalid font weight for brand font"
+    category: "brand.visual.typography"
+    input:
+      asset_type: "social_post_image"
+      fonts_used:
+        - family: "Inter"
+          weight: 800  # Not available
+    context:
+      brand_genome:
+        visual_identity:
+          typography:
+            primary_font:
+              family: "Inter"
+              weights_available: [400, 500, 600, 700]
+    expected:
+      valid: false
+      violations:
+        - rule_id: "brand_font_weight_check"
+          severity: "error"
+          message: "Font weight 800 is not available for Inter"
+          field: "fonts_used[0].weight"
+          suggested_fix:
+            type: "nearest_weight"
+            value: 700
+
+  # ---------------------------------------------------------------------------
+  # Voice & Tone Tests
+  # ---------------------------------------------------------------------------
+
+  - id: "voice_001_valid_tone"
+    name: "Content matches brand voice"
+    category: "brand.verbal.voice"
+    input:
+      asset_type: "linkedin_post"
+      content:
+        text: "We're excited to announce our latest feature that helps marketing teams save time. Here's how it works."
+    context:
+      brand_genome:
+        verbal_identity:
+          voice:
+            formality: 0.6
+            warmth: 0.7
+            confidence: 0.8
+    expected:
+      valid: true
+      violations: []
+      warnings: []
+      quality_score:
+        voice_match: 0.92
+
+  - id: "voice_002_too_casual"
+    name: "Content too casual for brand"
+    category: "brand.verbal.voice"
+    input:
+      asset_type: "linkedin_post"
+      content:
+        text: "yo check this out!! our new feature is literally insane 🔥🔥 u gotta try it lol"
+    context:
+      brand_genome:
+        verbal_identity:
+          voice:
+            formality: 0.7
+            humor: 0.2
+    expected:
+      valid: false
+      violations:
+        - rule_id: "voice_formality_check"
+          severity: "error"
+          message: "Content formality (0.2) is below brand minimum (0.5)"
+          field: "content.text"
+          suggested_fix:
+            type: "rewrite"
+            guidance: "Use professional language, avoid slang and excessive punctuation"
+
+  - id: "voice_003_banned_word"
+    name: "Banned vocabulary detected"
+    category: "brand.verbal.vocabulary"
+    input:
+      asset_type: "email"
+      content:
+        text: "Leverage our synergies to disrupt the market with our innovative solution."
+    context:
+      brand_genome:
+        verbal_identity:
+          vocabulary:
+            banned:
+              - "leverage"
+              - "synergy"
+              - "disrupt"
+    expected:
+      valid: false
+      violations:
+        - rule_id: "banned_word_check"
+          severity: "error"
+          message: "Content contains banned words: leverage, synergies, disrupt"
+          field: "content.text"
+          suggested_fix:
+            type: "replacements"
+            replacements:
+              - from: "Leverage"
+                to: "Use"
+              - from: "synergies"
+                to: "combined strengths"
+              - from: "disrupt"
+                to: "transform"
+
+  - id: "voice_004_reading_level_high"
+    name: "Reading level too high"
+    category: "brand.verbal.readability"
+    input:
+      asset_type: "blog_post"
+      content:
+        text: "The implementation of comprehensive strategic methodologies necessitates the systematic evaluation of multifaceted operational paradigms whilst simultaneously accommodating heterogeneous stakeholder requirements."
+    context:
+      brand_genome:
+        verbal_identity:
+          writing_rules:
+            reading_level:
+              flesch_kincaid_target: 8
+              flesch_kincaid_max: 12
+    expected:
+      valid: false
+      violations:
+        - rule_id: "reading_level_check"
+          severity: "error"
+          message: "Reading level (18.2) exceeds maximum (12.0)"
+          field: "content.text"
+          suggested_fix:
+            type: "simplify"
+            guidance: "Use shorter sentences and simpler words"
+
+  # ---------------------------------------------------------------------------
+  # Compliance Tests - FCA Financial Promotions
+  # ---------------------------------------------------------------------------
+
+  - id: "compliance_001_fca_missing_risk_warning"
+    name: "FCA - Missing risk warning for investment promotion"
+    category: "compliance.fca.financial_promotions"
+    input:
+      asset_type: "social_post"
+      content:
+        text: "Start investing today with our easy-to-use platform. Get started in minutes!"
+        content_type: "investment_promotion"
+      metadata:
+        jurisdiction: "UK"
+        product_category: "financial_services"
+    context:
+      brand_genome:
+        compliance:
+          enabled: true
+          jurisdictions: ["UK"]
+          industry_regulations: ["FCA"]
+    expected:
+      valid: false
+      violations:
+        - rule_id: "fca_risk_warning_required"
+          severity: "critical"
+          message: "Investment promotions require risk warning under FCA COBS 4"
+          field: "content"
+          required_elements:
+            - "Capital at risk statement"
+            - "Past performance disclaimer"
+          suggested_fix:
+            type: "append_disclaimer"
+            value: "Capital at risk. The value of investments can go down as well as up, and you may get back less than you invest."
+
+  - id: "compliance_002_fca_prohibited_claim"
+    name: "FCA - Prohibited guaranteed returns claim"
+    category: "compliance.fca.financial_promotions"
+    input:
+      asset_type: "email"
+      content:
+        text: "Guaranteed 10% returns on your investment. Risk-free growth for your portfolio."
+        content_type: "investment_promotion"
+      metadata:
+        jurisdiction: "UK"
+    context:
+      brand_genome:
+        compliance:
+          enabled: true
+          industry_regulations: ["FCA"]
+          prohibited_claims:
+            - "guaranteed returns"
+            - "risk-free"
+    expected:
+      valid: false
+      violations:
+        - rule_id: "fca_prohibited_claim_guarantee"
+          severity: "critical"
+          message: "Claims of 'guaranteed returns' are prohibited under FCA rules"
+          field: "content.text"
+          regulation_reference: "FCA COBS 4.5A"
+        - rule_id: "fca_prohibited_claim_risk_free"
+          severity: "critical"
+          message: "Claims of 'risk-free' investments are prohibited under FCA rules"
+          field: "content.text"
+          regulation_reference: "FCA COBS 4.5A"
+
+  - id: "compliance_003_fca_valid_promotion"
+    name: "FCA - Valid compliant financial promotion"
+    category: "compliance.fca.financial_promotions"
+    input:
+      asset_type: "social_post"
+      content:
+        text: "Explore investment opportunities with our platform. Capital at risk. The value of investments can go down as well as up. Past performance is not a reliable indicator of future results. Authorised and regulated by the FCA."
+        content_type: "investment_promotion"
+      metadata:
+        jurisdiction: "UK"
+    context:
+      brand_genome:
+        compliance:
+          enabled: true
+          industry_regulations: ["FCA"]
+    expected:
+      valid: true
+      violations: []
+      warnings: []
+      compliance_score: 1.0
+
+  - id: "compliance_004_fca_crypto_promotion"
+    name: "FCA - Crypto promotion requirements"
+    category: "compliance.fca.crypto"
+    input:
+      asset_type: "instagram_post"
+      content:
+        text: "Trade Bitcoin and Ethereum on our platform!"
+        content_type: "crypto_promotion"
+      metadata:
+        jurisdiction: "UK"
+    context:
+      brand_genome:
+        compliance:
+          enabled: true
+          industry_regulations: ["FCA"]
+    expected:
+      valid: false
+      violations:
+        - rule_id: "fca_crypto_risk_warning"
+          severity: "critical"
+          message: "Cryptoasset promotions require specific risk warnings"
+          required_elements:
+            - "Don't invest unless you're prepared to lose all the money you invest"
+            - "This is a high-risk investment"
+            - "You should not expect to be protected if something goes wrong"
+        - rule_id: "fca_crypto_appropriateness"
+          severity: "critical"
+          message: "Crypto promotions must include appropriateness assessment notice"
+
+  # ---------------------------------------------------------------------------
+  # Campaign Alignment Tests
+  # ---------------------------------------------------------------------------
+
+  - id: "campaign_001_valid_alignment"
+    name: "Content aligns with campaign objectives"
+    category: "campaign.alignment"
+    input:
+      asset_type: "linkedin_post"
+      content:
+        text: "Struggling with inconsistent marketing? Our AI-powered platform ensures brand consistency across all channels. Start your free trial today."
+        cta_text: "Start Free Trial"
+        cta_url: "https://skyie.io/trial?utm_campaign=q1_launch"
+    context:
+      campaign:
+        objective:
+          type: "conversion"
+          primary_kpi:
+            metric: "signups"
+        messaging:
+          key_message: "Launch your marketing on autopilot"
+          cta_primary:
+            text: "Start Free Trial"
+            url: "https://skyie.io/trial"
+    expected:
+      valid: true
+      violations: []
+      warnings: []
+      alignment_score: 0.88
+
+  - id: "campaign_002_wrong_cta"
+    name: "CTA doesn't match campaign"
+    category: "campaign.alignment"
+    input:
+      asset_type: "linkedin_post"
+      content:
+        text: "Check out our new feature!"
+        cta_text: "Learn More"
+        cta_url: "https://skyie.io/features"
+    context:
+      campaign:
+        messaging:
+          cta_primary:
+            text: "Start Free Trial"
+            url: "https://skyie.io/trial"
+    expected:
+      valid: false
+      violations:
+        - rule_id: "campaign_cta_mismatch"
+          severity: "error"
+          message: "CTA 'Learn More' does not match campaign CTA 'Start Free Trial'"
+          field: "content.cta_text"
+          suggested_fix:
+            type: "use_campaign_cta"
+            value:
+              text: "Start Free Trial"
+              url: "https://skyie.io/trial?utm_campaign=q1_launch"
+
+  - id: "campaign_003_off_phase"
+    name: "Content doesn't match campaign phase"
+    category: "campaign.phase"
+    input:
+      asset_type: "linkedin_post"
+      content:
+        text: "Don't miss out! Our product launch is coming soon. Stay tuned for something big!"
+        phase: "sustain"
+    context:
+      campaign:
+        timing:
+          phases:
+            - phase_id: "teaser"
+              content_strategy: "Build curiosity"
+            - phase_id: "launch"
+              content_strategy: "Full announcement"
+            - phase_id: "sustain"
+              content_strategy: "Social proof, testimonials"
+    expected:
+      valid: false
+      violations:
+        - rule_id: "campaign_phase_mismatch"
+          severity: "error"
+          message: "Content style matches 'teaser' phase but scheduled for 'sustain' phase"
+          field: "content"
+          suggested_fix:
+            type: "adjust_content_for_phase"
+            guidance: "Sustain phase should focus on testimonials and social proof"
+
+  # ---------------------------------------------------------------------------
+  # Platform-Specific Tests
+  # ---------------------------------------------------------------------------
+
+  - id: "platform_001_linkedin_valid"
+    name: "Valid LinkedIn post"
+    category: "platform.linkedin"
+    input:
+      asset_type: "linkedin_post"
+      content:
+        text: "Here's what we learned from working with 100+ marketing teams this year:\n\n1. Consistency beats perfection\n2. AI amplifies humans, doesn't replace them\n3. Brand guidelines matter more than ever\n\nWhat would you add to this list?\n\n#Marketing #AI #BrandStrategy"
+        character_count: 287
+        hashtag_count: 3
+    context:
+      brand_genome:
+        platform_rules:
+          linkedin:
+            hashtag_strategy:
+              max: 5
+              recommended: 3
+    expected:
+      valid: true
+      violations: []
+      warnings: []
+
+  - id: "platform_002_linkedin_too_many_hashtags"
+    name: "LinkedIn - Too many hashtags"
+    category: "platform.linkedin"
+    input:
+      asset_type: "linkedin_post"
+      content:
+        text: "Check out our platform! #Marketing #AI #MarTech #SaaS #Startup #Growth #B2B #Tech #Innovation #Automation #ContentMarketing #DigitalMarketing"
+        hashtag_count: 12
+    context:
+      brand_genome:
+        platform_rules:
+          linkedin:
+            hashtag_strategy:
+              max: 5
+    expected:
+      valid: false
+      violations:
+        - rule_id: "linkedin_hashtag_limit"
+          severity: "error"
+          message: "LinkedIn post has 12 hashtags, maximum is 5"
+          field: "content.hashtags"
+          suggested_fix:
+            type: "reduce_hashtags"
+            guidance: "Keep 3-5 most relevant hashtags"
+
+  - id: "platform_003_twitter_character_limit"
+    name: "Twitter - Exceeds character limit"
+    category: "platform.twitter"
+    input:
+      asset_type: "twitter_post"
+      content:
+        text: "We're incredibly excited to announce the launch of our revolutionary new marketing automation platform that will completely transform how marketing teams work and collaborate across organizations. This is the future of marketing and we can't wait for you to try it! Sign up for early access now at skyie.io"
+        character_count: 312
+    expected:
+      valid: false
+      violations:
+        - rule_id: "twitter_character_limit"
+          severity: "error"
+          message: "Twitter post exceeds 280 character limit (312 characters)"
+          field: "content.text"
+          suggested_fix:
+            type: "shorten"
+            value: "We're excited to announce our new marketing automation platform! Transform how your team works and collaborates. Sign up for early access: skyie.io"
+
+  # ---------------------------------------------------------------------------
+  # Quality Scoring Tests
+  # ---------------------------------------------------------------------------
+
+  - id: "quality_001_high_score"
+    name: "High quality content"
+    category: "quality"
+    input:
+      asset_type: "linkedin_post"
+      content:
+        text: "Here's a counterintuitive finding from our research:\n\nThe best-performing marketing teams spend 30% less time on content creation.\n\nHow? They front-load brand strategy.\n\nWhen your brand genome is locked in, every piece of content flows naturally. No debates about tone. No color mismatches. No off-brand messaging.\n\nWhat's your biggest brand consistency challenge?"
+    context:
+      brand_genome:
+        verbal_identity:
+          voice:
+            formality: 0.6
+            confidence: 0.8
+    expected:
+      valid: true
+      violations: []
+      warnings: []
+      quality_scores:
+        overall: 0.91
+        hook_strength: 0.95
+        engagement_potential: 0.88
+        brand_alignment: 0.93
+        readability: 0.89
+
+  - id: "quality_002_weak_hook"
+    name: "Weak opening hook"
+    category: "quality.engagement"
+    input:
+      asset_type: "linkedin_post"
+      content:
+        text: "We have some updates to share. Our platform now has new features. You can check them out on our website."
+    expected:
+      valid: true
+      violations: []
+      warnings:
+        - rule_id: "weak_hook_detected"
+          message: "Opening line lacks engagement hook. Consider starting with a question, statistic, or bold statement."
+      quality_scores:
+        overall: 0.52
+        hook_strength: 0.25
+        engagement_potential: 0.40
+
+  # ---------------------------------------------------------------------------
+  # Logo Usage Tests
+  # ---------------------------------------------------------------------------
+
+  - id: "logo_001_valid_usage"
+    name: "Valid logo usage"
+    category: "brand.visual.logo"
+    input:
+      asset_type: "social_post_image"
+      logo:
+        variant: "primary"
+        size_px: 120
+        background_color: "#FFFFFF"
+        clear_space_maintained: true
+    context:
+      brand_genome:
+        visual_identity:
+          logo:
+            primary:
+              min_size_px: 48
+              clear_space_ratio: 0.25
+            variants: []
+    expected:
+      valid: true
+      violations: []
+
+  - id: "logo_002_too_small"
+    name: "Logo below minimum size"
+    category: "brand.visual.logo"
+    input:
+      asset_type: "social_post_image"
+      logo:
+        variant: "primary"
+        size_px: 24
+    context:
+      brand_genome:
+        visual_identity:
+          logo:
+            primary:
+              min_size_px: 48
+    expected:
+      valid: false
+      violations:
+        - rule_id: "logo_min_size"
+          severity: "error"
+          message: "Logo size (24px) is below minimum (48px)"
+          field: "logo.size_px"
+          suggested_fix:
+            type: "increase_size"
+            value: 48
+
+  - id: "logo_003_wrong_variant_for_background"
+    name: "Wrong logo variant for dark background"
+    category: "brand.visual.logo"
+    input:
+      asset_type: "social_post_image"
+      logo:
+        variant: "primary"
+        background_color: "#000000"
+    context:
+      brand_genome:
+        visual_identity:
+          logo:
+            primary:
+              background_colors: ["#FFFFFF", "#F8F9FA"]
+            variants:
+              - variant_type: "mono_reversed"
+                use_when: ["on dark backgrounds"]
+                background_colors: ["#000000", "#202124"]
+    expected:
+      valid: false
+      violations:
+        - rule_id: "logo_variant_background"
+          severity: "error"
+          message: "Primary logo should not be used on dark backgrounds"
+          field: "logo.variant"
+          suggested_fix:
+            type: "use_variant"
+            value: "mono_reversed"
+
+# =============================================================================
+# TEST EXECUTION METADATA
+# =============================================================================
+
+metadata:
+  version: "1.0.0"
+  created_at: "2025-12-24"
+  total_test_cases: 28
+  categories:
+    - brand.visual.colors
+    - brand.visual.typography
+    - brand.visual.logo
+    - brand.verbal.voice
+    - brand.verbal.vocabulary
+    - brand.verbal.readability
+    - compliance.fca.financial_promotions
+    - compliance.fca.crypto
+    - campaign.alignment
+    - campaign.phase
+    - platform.linkedin
+    - platform.twitter
+    - quality
+    - quality.engagement

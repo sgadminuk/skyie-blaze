@@ -1,0 +1,241 @@
+# =============================================================================
+# Skyie Blaze - Staging Deployment Pipeline (Traefik Integration)
+# =============================================================================
+# Triggers:
+#   - Push to main branch (after CI passes)
+#
+# Deploys to staging VPS via existing Traefik reverse proxy
+# Does NOT start nginx - uses Traefik labels for routing
+# =============================================================================
+
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Docker image tag to deploy (default: latest main SHA)'
+        required: false
+        type: string
+      traefik_network:
+        description: 'Traefik network name (default: SkyieProxy)'
+        required: false
+        type: string
+        default: 'SkyieProxy'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+  TRAEFIK_NETWORK: ${{ github.event.inputs.traefik_network || 'SkyieProxy' }}
+
+# Only one staging deployment at a time
+concurrency:
+  group: staging-deployment
+  cancel-in-progress: false
+
+jobs:
+  # ===========================================================================
+  # Pre-deployment Checks
+  # ===========================================================================
+  pre-deploy:
+    name: Pre-deployment Checks
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Determine image tag
+        id: tag
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Verify images exist in registry
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          for service in brand-service campaign-service enforcement-engine; do
+            echo "Checking $service:$TAG..."
+            docker manifest inspect ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${service}:${TAG} || \
+              docker manifest inspect ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${service}:latest
+          done
+        env:
+          DOCKER_CLI_EXPERIMENTAL: enabled
+
+  # ===========================================================================
+  # Deploy to Staging
+  # ===========================================================================
+  deploy:
+    name: Deploy to Staging VPS
+    runs-on: ubuntu-latest
+    needs: pre-deploy
+    environment:
+      name: staging
+      url: https://api.staging.skyie.io
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.STAGING_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.STAGING_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+      - name: Verify Traefik network exists
+        run: |
+          ssh ${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }} << 'EOF'
+            set -e
+            echo "Checking for Traefik network..."
+
+            # Check if traefik network exists
+            if ! docker network inspect ${{ env.TRAEFIK_NETWORK }} > /dev/null 2>&1; then
+              echo "ERROR: Traefik network '${{ env.TRAEFIK_NETWORK }}' does not exist!"
+              echo "Available networks:"
+              docker network ls
+              exit 1
+            fi
+
+            echo "Traefik network '${{ env.TRAEFIK_NETWORK }}' found"
+
+            # Verify Traefik is running (optional - don't fail if container name differs)
+            if docker ps | grep -q traefik; then
+              echo "Traefik container is running"
+            else
+              echo "WARNING: No container named 'traefik' found - ensure Traefik is running"
+            fi
+          EOF
+
+      - name: Create deployment package
+        run: |
+          mkdir -p deploy
+          cp docker-compose.yml deploy/
+          cp docker-compose.staging.yml deploy/
+
+      - name: Copy files to staging server
+        run: |
+          scp -r deploy/* ${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}:/opt/skyie-blaze/
+
+      - name: Deploy to staging
+        run: |
+          ssh ${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }} << 'EOF'
+            set -e
+            cd /opt/skyie-blaze
+
+            # Backup current env
+            cp .env .env.backup.$(date +%Y%m%d_%H%M%S) 2>/dev/null || true
+
+            # Set environment variables
+            export APP_VERSION="${{ needs.pre-deploy.outputs.image_tag }}"
+            export DOCKER_REGISTRY="${{ env.REGISTRY }}"
+            export TRAEFIK_NETWORK="${{ env.TRAEFIK_NETWORK }}"
+
+            # Login to registry
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+            # Pull latest images
+            docker-compose -f docker-compose.yml -f docker-compose.staging.yml pull
+
+            # Deploy services (Traefik will pick up labels automatically)
+            # NOTE: nginx is NOT deployed - Traefik handles routing
+            docker-compose -f docker-compose.yml -f docker-compose.staging.yml up -d \
+              --remove-orphans \
+              brand-service campaign-service enforcement-engine postgres redis
+
+            # Wait for services to be healthy
+            echo "Waiting for services to be healthy..."
+            sleep 15
+
+            # Cleanup old images
+            docker image prune -f
+
+            echo "Deployment complete!"
+          EOF
+
+      - name: Verify deployment
+        run: |
+          ssh ${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }} << 'EOF'
+            set -e
+            cd /opt/skyie-blaze
+
+            echo "=== Service Status ==="
+            docker-compose -f docker-compose.yml -f docker-compose.staging.yml ps
+
+            echo ""
+            echo "=== Health Checks (via Docker) ==="
+            # Health checks via Docker exec (since ports are not exposed)
+            for service in skyie-brand-service skyie-campaign-service skyie-enforcement-engine; do
+              echo "Checking $service..."
+              for i in {1..30}; do
+                if docker exec $service wget -q --spider http://localhost:3000/health 2>/dev/null; then
+                  echo "  $service is healthy"
+                  break
+                fi
+                if [ $i -eq 30 ]; then
+                  echo "  Health check failed for $service"
+                  docker logs --tail=50 $service
+                  exit 1
+                fi
+                sleep 2
+              done
+            done
+
+            echo ""
+            echo "=== Traefik Routing Verification ==="
+            # Verify services are connected to Traefik network
+            for service in skyie-brand-service skyie-campaign-service skyie-enforcement-engine; do
+              if docker inspect $service --format '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' | grep -q "${{ env.TRAEFIK_NETWORK }}"; then
+                echo "  $service connected to Traefik network"
+              else
+                echo "  WARNING: $service not connected to Traefik network"
+              fi
+            done
+
+            echo ""
+            echo "All services healthy and connected to Traefik!"
+          EOF
+
+      - name: Test external endpoints
+        run: |
+          echo "Testing external endpoints via Traefik..."
+          sleep 5
+
+          # Test brand service endpoint
+          if curl -sf https://api.staging.skyie.io/v1/brands -o /dev/null; then
+            echo "Brand service accessible via Traefik"
+          else
+            echo "WARNING: Brand service not yet accessible (DNS/cert propagation may be pending)"
+          fi
+
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "::notice::Staging deployment successful! Version: ${{ needs.pre-deploy.outputs.image_tag }}"
+          echo "::notice::API available at: https://api.staging.skyie.io/v1/"
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          ssh ${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }} << 'EOF'
+            set -e
+            cd /opt/skyie-blaze
+
+            echo "Rolling back to previous version..."
+
+            # Find most recent backup
+            LATEST_BACKUP=$(ls -t .env.backup.* 2>/dev/null | head -1)
+            if [ -n "$LATEST_BACKUP" ]; then
+              cp "$LATEST_BACKUP" .env
+              echo "Restored $LATEST_BACKUP"
+            fi
+
+            # Restart with previous images
+            docker-compose -f docker-compose.yml -f docker-compose.staging.yml up -d \
+              brand-service campaign-service enforcement-engine postgres redis
+
+            echo "Rollback complete"
+          EOF

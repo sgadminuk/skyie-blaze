@@ -1,0 +1,1368 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skyie.io/schemas/brand-genome/v1.0.0/brand-genome.schema.json",
+  "title": "Brand Genome",
+  "description": "Machine-enforceable specification for brand identity, governance, and operationalization",
+  "type": "object",
+  "required": ["$schema", "id", "version", "identity", "visual_identity", "verbal_identity"],
+  "additionalProperties": false,
+  
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "const": "https://skyie.io/schemas/brand-genome/v1.0.0/brand-genome.schema.json"
+    },
+    
+    "id": {
+      "type": "string",
+      "pattern": "^urn:skyie:brand:[a-z0-9_-]+:[a-z0-9_-]+$",
+      "description": "Unique identifier in URN format: urn:skyie:brand:{org_id}:{brand_id}"
+    },
+    
+    "version": {
+      "$ref": "#/$defs/Version"
+    },
+    
+    "identity": {
+      "$ref": "#/$defs/BrandIdentity"
+    },
+    
+    "visual_identity": {
+      "$ref": "#/$defs/VisualIdentity"
+    },
+    
+    "verbal_identity": {
+      "$ref": "#/$defs/VerbalIdentity"
+    },
+    
+    "compliance": {
+      "$ref": "#/$defs/ComplianceConfig"
+    },
+    
+    "audience": {
+      "$ref": "#/$defs/AudienceConfig"
+    },
+    
+    "content_strategy": {
+      "$ref": "#/$defs/ContentStrategy"
+    },
+    
+    "platform_rules": {
+      "$ref": "#/$defs/PlatformRules"
+    },
+    
+    "metadata": {
+      "$ref": "#/$defs/GenomeMetadata"
+    }
+  },
+  
+  "$defs": {
+    "Version": {
+      "type": "object",
+      "required": ["major", "minor", "patch", "hash", "created_at", "created_by"],
+      "additionalProperties": false,
+      "properties": {
+        "major": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Breaking changes - requires re-approval of all assets"
+        },
+        "minor": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "New features/fields - backward compatible"
+        },
+        "patch": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Bug fixes, typos - no functional change"
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "description": "SHA-256 hash of canonical JSON representation"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created_by": {
+          "type": "string",
+          "description": "User ID or 'extraction_pipeline'"
+        },
+        "parent_version": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Previous version this was derived from"
+        },
+        "change_summary": {
+          "type": "string",
+          "maxLength": 500
+        }
+      }
+    },
+    
+    "BrandIdentity": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "legal_name": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "tagline": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "mission_statement": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "vision_statement": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "value_propositions": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 300 },
+          "maxItems": 10
+        },
+        "brand_values": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 100 },
+          "maxItems": 10
+        },
+        "brand_personality": {
+          "$ref": "#/$defs/BrandPersonality"
+        },
+        "founded_year": {
+          "type": "integer",
+          "minimum": 1800,
+          "maximum": 2100
+        },
+        "headquarters": {
+          "type": "string"
+        },
+        "website": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    
+    "BrandPersonality": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "archetypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "Innocent", "Explorer", "Sage", "Hero", "Outlaw", "Magician",
+              "Regular Guy", "Lover", "Jester", "Caregiver", "Creator", "Ruler"
+            ]
+          },
+          "maxItems": 3,
+          "description": "Jungian brand archetypes, ordered by primary to tertiary"
+        },
+        "traits": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 50 },
+          "maxItems": 10
+        },
+        "tone_descriptors": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 50 },
+          "maxItems": 10
+        }
+      }
+    },
+    
+    "VisualIdentity": {
+      "type": "object",
+      "required": ["colors", "typography"],
+      "additionalProperties": false,
+      "properties": {
+        "logo": {
+          "$ref": "#/$defs/LogoSystem"
+        },
+        "colors": {
+          "$ref": "#/$defs/ColorSystem"
+        },
+        "typography": {
+          "$ref": "#/$defs/TypographySystem"
+        },
+        "spacing": {
+          "$ref": "#/$defs/SpacingSystem"
+        },
+        "imagery": {
+          "$ref": "#/$defs/ImageryGuidelines"
+        },
+        "motion": {
+          "$ref": "#/$defs/MotionGuidelines"
+        }
+      }
+    },
+    
+    "LogoSystem": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "primary": {
+          "$ref": "#/$defs/LogoVariant"
+        },
+        "variants": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/LogoVariant" },
+          "maxItems": 10
+        },
+        "usage_rules": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxItems": 20
+        },
+        "prohibited_uses": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxItems": 20
+        }
+      }
+    },
+    
+    "LogoVariant": {
+      "type": "object",
+      "required": ["url", "format"],
+      "additionalProperties": false,
+      "properties": {
+        "variant_type": {
+          "type": "string",
+          "enum": ["primary", "mono", "mono_reversed", "icon", "horizontal", "vertical", "favicon"]
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "format": {
+          "type": "string",
+          "enum": ["svg", "png", "eps", "pdf"]
+        },
+        "min_size_px": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "clear_space_ratio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Minimum clear space as ratio of logo height"
+        },
+        "use_when": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "background_colors": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/HexColor" },
+          "description": "Approved background colors for this variant"
+        }
+      }
+    },
+    
+    "ColorSystem": {
+      "type": "object",
+      "required": ["primary"],
+      "additionalProperties": false,
+      "properties": {
+        "primary": {
+          "$ref": "#/$defs/BrandColor"
+        },
+        "secondary": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/BrandColor" },
+          "maxItems": 5
+        },
+        "accent": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/BrandColor" },
+          "maxItems": 5
+        },
+        "neutral": {
+          "$ref": "#/$defs/NeutralPalette"
+        },
+        "semantic": {
+          "$ref": "#/$defs/SemanticColors"
+        },
+        "gradient_rules": {
+          "$ref": "#/$defs/GradientRules"
+        }
+      }
+    },
+    
+    "BrandColor": {
+      "type": "object",
+      "required": ["hex"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "Human-readable name, e.g., 'Skyie Blue'"
+        },
+        "hex": {
+          "$ref": "#/$defs/HexColor"
+        },
+        "rgb": {
+          "$ref": "#/$defs/RGBColor"
+        },
+        "hsl": {
+          "$ref": "#/$defs/HSLColor"
+        },
+        "cmyk": {
+          "$ref": "#/$defs/CMYKColor"
+        },
+        "pantone": {
+          "type": "string",
+          "pattern": "^(PMS |Pantone )?[0-9]+( [A-Z]+)?$"
+        },
+        "semantic_meaning": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "What this color represents, e.g., 'trust, technology'"
+        },
+        "usage": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Where this color should be used"
+        },
+        "prohibited_usage": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "accessibility": {
+          "$ref": "#/$defs/ColorAccessibility"
+        }
+      }
+    },
+    
+    "HexColor": {
+      "type": "string",
+      "pattern": "^#[A-Fa-f0-9]{6}$"
+    },
+    
+    "RGBColor": {
+      "type": "object",
+      "required": ["r", "g", "b"],
+      "additionalProperties": false,
+      "properties": {
+        "r": { "type": "integer", "minimum": 0, "maximum": 255 },
+        "g": { "type": "integer", "minimum": 0, "maximum": 255 },
+        "b": { "type": "integer", "minimum": 0, "maximum": 255 }
+      }
+    },
+    
+    "HSLColor": {
+      "type": "object",
+      "required": ["h", "s", "l"],
+      "additionalProperties": false,
+      "properties": {
+        "h": { "type": "number", "minimum": 0, "maximum": 360 },
+        "s": { "type": "number", "minimum": 0, "maximum": 100 },
+        "l": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    },
+    
+    "CMYKColor": {
+      "type": "object",
+      "required": ["c", "m", "y", "k"],
+      "additionalProperties": false,
+      "properties": {
+        "c": { "type": "number", "minimum": 0, "maximum": 100 },
+        "m": { "type": "number", "minimum": 0, "maximum": 100 },
+        "y": { "type": "number", "minimum": 0, "maximum": 100 },
+        "k": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    },
+    
+    "ColorAccessibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "wcag_aa_on_white": { "type": "boolean" },
+        "wcag_aaa_on_white": { "type": "boolean" },
+        "wcag_aa_on_black": { "type": "boolean" },
+        "wcag_aaa_on_black": { "type": "boolean" },
+        "contrast_ratio_on_white": { "type": "number", "minimum": 1 },
+        "contrast_ratio_on_black": { "type": "number", "minimum": 1 },
+        "safe_text_colors": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/HexColor" }
+        }
+      }
+    },
+    
+    "NeutralPalette": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "background": { "$ref": "#/$defs/HexColor" },
+        "surface": { "$ref": "#/$defs/HexColor" },
+        "surface_variant": { "$ref": "#/$defs/HexColor" },
+        "text_primary": { "$ref": "#/$defs/HexColor" },
+        "text_secondary": { "$ref": "#/$defs/HexColor" },
+        "text_disabled": { "$ref": "#/$defs/HexColor" },
+        "border": { "$ref": "#/$defs/HexColor" },
+        "divider": { "$ref": "#/$defs/HexColor" }
+      }
+    },
+    
+    "SemanticColors": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "success": { "$ref": "#/$defs/HexColor" },
+        "warning": { "$ref": "#/$defs/HexColor" },
+        "error": { "$ref": "#/$defs/HexColor" },
+        "info": { "$ref": "#/$defs/HexColor" }
+      }
+    },
+    
+    "GradientRules": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "allowed": {
+          "type": "boolean",
+          "default": true
+        },
+        "approved_gradients": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Gradient" },
+          "maxItems": 10
+        },
+        "prohibited_combinations": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/HexColor" },
+            "minItems": 2
+          }
+        }
+      }
+    },
+    
+    "Gradient": {
+      "type": "object",
+      "required": ["type", "stops"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["linear", "radial"]
+        },
+        "direction": {
+          "type": "string",
+          "pattern": "^[0-9]{1,3}deg$",
+          "description": "CSS gradient direction, e.g., '180deg'"
+        },
+        "stops": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["color", "position"],
+            "properties": {
+              "color": { "$ref": "#/$defs/HexColor" },
+              "position": { "type": "number", "minimum": 0, "maximum": 100 }
+            }
+          },
+          "minItems": 2
+        }
+      }
+    },
+    
+    "TypographySystem": {
+      "type": "object",
+      "required": ["primary_font", "hierarchy"],
+      "additionalProperties": false,
+      "properties": {
+        "primary_font": {
+          "$ref": "#/$defs/FontDefinition"
+        },
+        "secondary_font": {
+          "$ref": "#/$defs/FontDefinition"
+        },
+        "monospace_font": {
+          "$ref": "#/$defs/FontDefinition"
+        },
+        "hierarchy": {
+          "$ref": "#/$defs/TypeHierarchy"
+        }
+      }
+    },
+    
+    "FontDefinition": {
+      "type": "object",
+      "required": ["family"],
+      "additionalProperties": false,
+      "properties": {
+        "family": {
+          "type": "string",
+          "description": "Font family name"
+        },
+        "fallback": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Fallback font stack"
+        },
+        "weights_available": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "enum": [100, 200, 300, 400, 500, 600, 700, 800, 900]
+          }
+        },
+        "source": {
+          "type": "string",
+          "enum": ["google_fonts", "adobe_fonts", "custom", "system"]
+        },
+        "license": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL for custom font files or CDN"
+        }
+      }
+    },
+    
+    "TypeHierarchy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "display": { "$ref": "#/$defs/TypeStyle" },
+        "h1": { "$ref": "#/$defs/TypeStyle" },
+        "h2": { "$ref": "#/$defs/TypeStyle" },
+        "h3": { "$ref": "#/$defs/TypeStyle" },
+        "h4": { "$ref": "#/$defs/TypeStyle" },
+        "h5": { "$ref": "#/$defs/TypeStyle" },
+        "h6": { "$ref": "#/$defs/TypeStyle" },
+        "body": { "$ref": "#/$defs/TypeStyle" },
+        "body_large": { "$ref": "#/$defs/TypeStyle" },
+        "body_small": { "$ref": "#/$defs/TypeStyle" },
+        "caption": { "$ref": "#/$defs/TypeStyle" },
+        "overline": { "$ref": "#/$defs/TypeStyle" },
+        "button": { "$ref": "#/$defs/TypeStyle" }
+      }
+    },
+    
+    "TypeStyle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "font_family": {
+          "type": "string",
+          "enum": ["primary", "secondary", "monospace"]
+        },
+        "size_px": { "type": "number", "minimum": 1 },
+        "size_rem": { "type": "number", "minimum": 0.1 },
+        "weight": {
+          "type": "integer",
+          "enum": [100, 200, 300, 400, 500, 600, 700, 800, 900]
+        },
+        "line_height": { "type": "number", "minimum": 0.5 },
+        "letter_spacing": {
+          "type": "string",
+          "pattern": "^-?[0-9]+(\\.[0-9]+)?(em|px|rem)$"
+        },
+        "text_transform": {
+          "type": "string",
+          "enum": ["none", "uppercase", "lowercase", "capitalize"]
+        }
+      }
+    },
+    
+    "SpacingSystem": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "base_unit": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 8,
+          "description": "Base unit in pixels"
+        },
+        "scale": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0 },
+          "description": "Available spacing values"
+        },
+        "grid_columns": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 12
+        },
+        "gutter_px": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_content_width_px": {
+          "type": "integer",
+          "minimum": 100
+        }
+      }
+    },
+    
+    "ImageryGuidelines": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "photography_style": {
+          "$ref": "#/$defs/PhotographyStyle"
+        },
+        "illustration_style": {
+          "$ref": "#/$defs/IllustrationStyle"
+        },
+        "icon_style": {
+          "$ref": "#/$defs/IconStyle"
+        }
+      }
+    },
+    
+    "PhotographyStyle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "subjects": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "mood": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "lighting": { "type": "string" },
+        "color_treatment": { "type": "string" },
+        "composition_rules": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "prohibited": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "filters_presets": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    
+    "IllustrationStyle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "style": { "type": "string" },
+        "line_weight": { "type": "string" },
+        "allowed_colors": { "type": "string" },
+        "prohibited": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    
+    "IconStyle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "style": {
+          "type": "string",
+          "enum": ["outline", "filled", "duotone", "custom"]
+        },
+        "stroke_width": { "type": "number" },
+        "corner_radius": { "type": "number" },
+        "grid_size": { "type": "integer" }
+      }
+    },
+    
+    "MotionGuidelines": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "easing": {
+          "type": "string",
+          "description": "CSS cubic-bezier or keyword"
+        },
+        "duration_scale": {
+          "type": "object",
+          "properties": {
+            "instant": { "type": "string", "pattern": "^[0-9]+ms$" },
+            "fast": { "type": "string", "pattern": "^[0-9]+ms$" },
+            "normal": { "type": "string", "pattern": "^[0-9]+ms$" },
+            "slow": { "type": "string", "pattern": "^[0-9]+ms$" }
+          }
+        },
+        "enter_animation": { "type": "string" },
+        "exit_animation": { "type": "string" },
+        "prohibited": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Animation types that are off-brand"
+        }
+      }
+    },
+    
+    "VerbalIdentity": {
+      "type": "object",
+      "required": ["voice"],
+      "additionalProperties": false,
+      "properties": {
+        "voice": {
+          "$ref": "#/$defs/VoiceParameters"
+        },
+        "tone_contexts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ToneContext" }
+        },
+        "writing_rules": {
+          "$ref": "#/$defs/WritingRules"
+        },
+        "vocabulary": {
+          "$ref": "#/$defs/VocabularyRules"
+        },
+        "messaging": {
+          "$ref": "#/$defs/MessagingFramework"
+        }
+      }
+    },
+    
+    "VoiceParameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "All values are 0-1 scale where 0.5 is neutral",
+      "properties": {
+        "formality": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "0=very casual, 1=very formal"
+        },
+        "technical_level": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "0=layperson, 1=expert"
+        },
+        "warmth": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "0=cold/distant, 1=warm/friendly"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "0=tentative, 1=authoritative"
+        },
+        "humor": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "0=serious, 1=playful"
+        },
+        "urgency": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "0=relaxed, 1=urgent"
+        }
+      }
+    },
+    
+    "ToneContext": {
+      "type": "object",
+      "required": ["context", "adjustments"],
+      "additionalProperties": false,
+      "properties": {
+        "context": {
+          "type": "string",
+          "enum": ["marketing", "sales", "support", "crisis", "legal", "social", "email", "formal_comms"]
+        },
+        "adjustments": {
+          "$ref": "#/$defs/VoiceParameters"
+        },
+        "examples": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    
+    "WritingRules": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sentence_length": {
+          "type": "object",
+          "properties": {
+            "target": { "type": "integer" },
+            "max": { "type": "integer" }
+          }
+        },
+        "paragraph_length": {
+          "type": "object",
+          "properties": {
+            "target": { "type": "integer" },
+            "max": { "type": "integer" }
+          }
+        },
+        "reading_level": {
+          "type": "object",
+          "properties": {
+            "flesch_kincaid_target": { "type": "number" },
+            "flesch_kincaid_max": { "type": "number" }
+          }
+        },
+        "active_voice_ratio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Target ratio of active voice sentences"
+        },
+        "contractions": {
+          "type": "string",
+          "enum": ["always", "sometimes", "never"]
+        },
+        "oxford_comma": {
+          "type": "boolean"
+        },
+        "date_format": {
+          "type": "string",
+          "description": "e.g., 'DD/MM/YYYY' for UK"
+        },
+        "number_style": {
+          "type": "object",
+          "properties": {
+            "spell_below": { "type": "integer" },
+            "thousands_separator": { "type": "string" },
+            "decimal_separator": { "type": "string" }
+          }
+        }
+      }
+    },
+    
+    "VocabularyRules": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "preferred": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Words/phrases we prefer to use"
+        },
+        "avoid": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Words/phrases we prefer not to use"
+        },
+        "banned": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Words/phrases that must never be used"
+        },
+        "replacements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["from", "to"],
+            "properties": {
+              "from": { "type": "string" },
+              "to": { "type": "string" }
+            }
+          },
+          "description": "Automatic word substitutions"
+        },
+        "industry_jargon_policy": {
+          "type": "string",
+          "enum": ["avoid", "use_sparingly_with_explanation", "use_freely"]
+        }
+      }
+    },
+    
+    "MessagingFramework": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "taglines": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "elevator_pitch_30s": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "elevator_pitch_60s": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "boilerplate": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "value_props": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "headline": { "type": "string" },
+              "description": { "type": "string" },
+              "proof_points": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          }
+        },
+        "key_messages": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    
+    "ComplianceConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "jurisdictions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["UK", "EU", "US", "US_CA", "US_NY", "AU", "SG", "AE"]
+          }
+        },
+        "industry_regulations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["FCA", "SEC", "FINRA", "HIPAA", "FDA", "ASA", "GDPR", "CCPA"]
+          }
+        },
+        "rules": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ComplianceRule" }
+        },
+        "disclaimers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Disclaimer" }
+        },
+        "prohibited_claims": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "required_disclosures": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "approval_workflow": {
+          "$ref": "#/$defs/ApprovalWorkflow"
+        }
+      }
+    },
+    
+    "ComplianceRule": {
+      "type": "object",
+      "required": ["rule_id", "description", "enforcement"],
+      "additionalProperties": false,
+      "properties": {
+        "rule_id": {
+          "type": "string",
+          "pattern": "^[a-z_]+_[0-9]+$"
+        },
+        "regulation": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "trigger_conditions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "enforcement": {
+          "type": "string",
+          "enum": ["block", "warn", "log"]
+        },
+        "required_elements": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "prohibited_elements": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    
+    "Disclaimer": {
+      "type": "object",
+      "required": ["disclaimer_id", "text", "trigger_conditions"],
+      "additionalProperties": false,
+      "properties": {
+        "disclaimer_id": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "text_variants": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Variants by jurisdiction or context"
+        },
+        "trigger_conditions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "placement": {
+          "type": "string",
+          "enum": ["above_content", "below_content", "below_cta", "footer", "inline"]
+        },
+        "styling": {
+          "type": "object",
+          "properties": {
+            "min_font_ratio": { "type": "number" },
+            "contrast_required": { "type": "boolean" },
+            "prominent": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    
+    "ApprovalWorkflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "required_for": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "approver_roles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "max_approval_time_hours": {
+          "type": "integer"
+        },
+        "escalation_after_hours": {
+          "type": "integer"
+        },
+        "auto_reject_after_hours": {
+          "type": "integer"
+        }
+      }
+    },
+    
+    "AudienceConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "personas": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Persona" }
+        },
+        "anti_personas": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/AntiPersona" }
+        }
+      }
+    },
+    
+    "Persona": {
+      "type": "object",
+      "required": ["persona_id", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "persona_id": {
+          "type": "string",
+          "pattern": "^[a-z_]+$"
+        },
+        "name": {
+          "type": "string"
+        },
+        "demographics": {
+          "type": "object",
+          "properties": {
+            "age_range": {
+              "type": "array",
+              "items": { "type": "integer" },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "gender": { "type": "string" },
+            "job_titles": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "company_size": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "industries": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "locations": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "psychographics": {
+          "type": "object",
+          "properties": {
+            "goals": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "pain_points": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "motivations": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "objections": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "content_preferences": {
+          "type": "object",
+          "properties": {
+            "formats": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "channels": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "tone_preference": { "type": "string" },
+            "content_length": {
+              "type": "string",
+              "enum": ["snackable", "medium", "long_form"]
+            }
+          }
+        }
+      }
+    },
+    
+    "AntiPersona": {
+      "type": "object",
+      "required": ["description", "exclusion_reason"],
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string" },
+        "exclusion_reason": { "type": "string" },
+        "signals": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    
+    "ContentStrategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pillars": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ContentPillar" }
+        },
+        "forbidden_zones": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "content_types": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/ContentTypeRules" }
+        }
+      }
+    },
+    
+    "ContentPillar": {
+      "type": "object",
+      "required": ["pillar_id", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "pillar_id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "content_ratio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "themes": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    
+    "ContentTypeRules": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "min_words": { "type": "integer" },
+        "max_words": { "type": "integer" },
+        "min_chars": { "type": "integer" },
+        "max_chars": { "type": "integer" },
+        "required_elements": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "optional_elements": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "hashtags": {
+          "type": "object",
+          "properties": {
+            "min": { "type": "integer" },
+            "max": { "type": "integer" }
+          }
+        }
+      }
+    },
+    
+    "PlatformRules": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/PlatformConfig" }
+    },
+    
+    "PlatformConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "posting_frequency": {
+          "type": "object",
+          "properties": {
+            "min_per_week": { "type": "integer" },
+            "max_per_week": { "type": "integer" },
+            "min_per_day": { "type": "integer" },
+            "max_per_day": { "type": "integer" }
+          }
+        },
+        "optimal_times_utc": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-2][0-9]:[0-5][0-9]$"
+          }
+        },
+        "content_mix": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "hashtag_strategy": {
+          "type": "object",
+          "properties": {
+            "max": { "type": "integer" },
+            "recommended": { "type": "integer" },
+            "branded": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "handle": {
+          "type": "string"
+        },
+        "bio": {
+          "type": "string"
+        }
+      }
+    },
+    
+    "GenomeMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_modified": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "extraction_sources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ExtractionSource" }
+        },
+        "human_confirmed_fields": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "requires_confirmation": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    
+    "ExtractionSource": {
+      "type": "object",
+      "required": ["source_type"],
+      "additionalProperties": false,
+      "properties": {
+        "source_type": {
+          "type": "string",
+          "enum": ["website", "pdf", "image", "social_account", "api", "manual"]
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "filename": { "type": "string" },
+        "extracted_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "fields_extracted": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

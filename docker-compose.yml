@@ -1,0 +1,197 @@
+# =============================================================================
+# Skyie Blaze - Docker Compose Configuration
+# =============================================================================
+# Usage:
+#   Local:   docker-compose up -d
+#   Staging: docker-compose -f docker-compose.yml -f docker-compose.staging.yml up -d
+#   Prod:    docker-compose -f docker-compose.yml -f docker-compose.production.yml up -d
+#
+# Traefik Integration:
+#   - Uses existing Traefik reverse proxy on VPS
+#   - Does NOT bind ports 80/443
+#   - Uses Docker labels for routing
+#   - Requires external 'traefik' network to exist
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Core Services
+  # ---------------------------------------------------------------------------
+
+  brand-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: brand-service
+    image: ${DOCKER_REGISTRY:-local}/skyie-blaze/brand-service:${APP_VERSION:-latest}
+    container_name: skyie-brand-service
+    restart: unless-stopped
+    # Ports exposed only for local development (overridden in staging/prod)
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - SERVICE_NAME=brand-service
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - JWT_SECRET=${JWT_SECRET}
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - skyie-internal
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    # Traefik labels disabled by default (enabled in staging/prod overrides)
+    labels:
+      - "traefik.enable=false"
+
+  campaign-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: campaign-service
+    image: ${DOCKER_REGISTRY:-local}/skyie-blaze/campaign-service:${APP_VERSION:-latest}
+    container_name: skyie-campaign-service
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - SERVICE_NAME=campaign-service
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - JWT_SECRET=${JWT_SECRET}
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - skyie-internal
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "traefik.enable=false"
+
+  enforcement-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: enforcement-engine
+    image: ${DOCKER_REGISTRY:-local}/skyie-blaze/enforcement-engine:${APP_VERSION:-latest}
+    container_name: skyie-enforcement-engine
+    restart: unless-stopped
+    ports:
+      - "3003:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - SERVICE_NAME=enforcement-engine
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - JWT_SECRET=${JWT_SECRET}
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - skyie-internal
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "traefik.enable=false"
+
+  # ---------------------------------------------------------------------------
+  # Infrastructure Services
+  # ---------------------------------------------------------------------------
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: skyie-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-skyie_blaze}
+      - POSTGRES_USER=${POSTGRES_USER:-skyie}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-skyie_dev_password}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - skyie-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-skyie} -d ${POSTGRES_DB:-skyie_blaze}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: skyie-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes ${REDIS_PASSWORD:+--requirepass $REDIS_PASSWORD}
+    volumes:
+      - redis-data:/data
+    networks:
+      - skyie-internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+# -----------------------------------------------------------------------------
+# Networks
+# -----------------------------------------------------------------------------
+
+networks:
+  # Internal network for service-to-service communication
+  skyie-internal:
+    driver: bridge
+    name: skyie-internal
+
+  # External Traefik network (must exist on VPS)
+  # Used in staging/production overrides
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK:-SkyieProxy}
+
+# -----------------------------------------------------------------------------
+# Volumes
+# -----------------------------------------------------------------------------
+
+volumes:
+  postgres-data:
+    name: skyie-postgres-data
+  redis-data:
+    name: skyie-redis-data

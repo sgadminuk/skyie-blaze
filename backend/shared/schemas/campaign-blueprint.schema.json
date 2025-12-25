@@ -1,0 +1,885 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skyie.io/schemas/campaign-blueprint/v1.0.0/campaign-blueprint.schema.json",
+  "title": "Campaign Blueprint",
+  "description": "Machine-enforceable specification for marketing campaign strategy and execution",
+  "type": "object",
+  "required": ["$schema", "id", "metadata", "brand_genome_ref", "objective", "timing", "channel_strategy"],
+  "additionalProperties": false,
+
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "const": "https://skyie.io/schemas/campaign-blueprint/v1.0.0/campaign-blueprint.schema.json"
+    },
+
+    "id": {
+      "type": "string",
+      "pattern": "^urn:skyie:campaign:[a-z0-9_-]+:[a-z0-9_-]+$",
+      "description": "Unique identifier: urn:skyie:campaign:{org_id}:{campaign_id}"
+    },
+
+    "metadata": {
+      "$ref": "#/$defs/CampaignMetadata"
+    },
+
+    "brand_genome_ref": {
+      "type": "string",
+      "pattern": "^urn:skyie:brand:[a-z0-9_-]+:[a-z0-9_-]+(:v[0-9]+\\.[0-9]+\\.[0-9]+)?$",
+      "description": "Reference to Brand Genome, optionally with version"
+    },
+
+    "objective": {
+      "$ref": "#/$defs/CampaignObjective"
+    },
+
+    "timing": {
+      "$ref": "#/$defs/CampaignTiming"
+    },
+
+    "target_audience": {
+      "$ref": "#/$defs/TargetAudience"
+    },
+
+    "messaging": {
+      "$ref": "#/$defs/CampaignMessaging"
+    },
+
+    "channel_strategy": {
+      "$ref": "#/$defs/ChannelStrategy"
+    },
+
+    "content_plan": {
+      "$ref": "#/$defs/ContentPlan"
+    },
+
+    "budget": {
+      "$ref": "#/$defs/CampaignBudget"
+    },
+
+    "success_metrics": {
+      "$ref": "#/$defs/SuccessMetrics"
+    },
+
+    "compliance_overrides": {
+      "$ref": "#/$defs/ComplianceOverrides"
+    }
+  },
+
+  "$defs": {
+    "CampaignMetadata": {
+      "type": "object",
+      "required": ["name", "status", "created_at", "created_by"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "scheduled", "active", "paused", "completed", "archived", "cancelled"]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created_by": {
+          "type": "string"
+        },
+        "last_modified": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "modified_by": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "external_id": {
+          "type": "string",
+          "description": "ID in external system (CRM, project management)"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 5,
+          "description": "Campaign priority for arbitration (1=highest)"
+        }
+      }
+    },
+
+    "CampaignObjective": {
+      "type": "object",
+      "required": ["type", "primary_kpi"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["awareness", "consideration", "conversion", "retention", "advocacy", "engagement"]
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "primary_kpi": {
+          "$ref": "#/$defs/KPI"
+        },
+        "secondary_kpis": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/KPI" },
+          "maxItems": 5
+        },
+        "success_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Ratio of primary KPI target that defines success (e.g., 0.8 = 80%)"
+        }
+      }
+    },
+
+    "KPI": {
+      "type": "object",
+      "required": ["metric", "target"],
+      "additionalProperties": false,
+      "properties": {
+        "metric": {
+          "type": "string",
+          "enum": [
+            "impressions", "reach", "views", "video_views",
+            "clicks", "website_visits", "page_views", "time_on_site",
+            "engagements", "engagement_rate", "likes", "comments", "shares", "saves",
+            "leads", "signups", "registrations", "downloads",
+            "conversions", "purchases", "revenue", "roas", "aov",
+            "ctr", "cpc", "cpm", "cpa", "cpl",
+            "followers", "subscriber_growth",
+            "nps", "csat", "retention_rate",
+            "custom"
+          ]
+        },
+        "custom_metric_name": {
+          "type": "string",
+          "description": "Name if metric is 'custom'"
+        },
+        "target": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string",
+          "description": "Unit of measurement (e.g., 'users', 'GBP', '%')"
+        },
+        "timeframe_days": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "baseline": {
+          "type": "number",
+          "description": "Current/historical value for comparison"
+        }
+      }
+    },
+
+    "CampaignTiming": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["finite", "perpetual", "recurring"]
+        },
+        "start_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "timezone": {
+          "type": "string",
+          "description": "IANA timezone identifier"
+        },
+        "phases": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/CampaignPhase" }
+        },
+        "recurrence": {
+          "$ref": "#/$defs/RecurrenceRule"
+        },
+        "blackout_dates": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "date"
+          },
+          "description": "Dates when no content should be published"
+        },
+        "key_dates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["date", "description"],
+            "properties": {
+              "date": { "type": "string", "format": "date" },
+              "description": { "type": "string" },
+              "content_focus": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+
+    "CampaignPhase": {
+      "type": "object",
+      "required": ["phase_id", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "phase_id": {
+          "type": "string",
+          "pattern": "^[a-z_]+$"
+        },
+        "name": {
+          "type": "string"
+        },
+        "start_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "start_offset_days": {
+          "type": "integer",
+          "description": "Days after campaign start"
+        },
+        "end_offset_days": {
+          "type": "integer",
+          "description": "Days after campaign start"
+        },
+        "content_strategy": {
+          "type": "string"
+        },
+        "channel_weights": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "budget_allocation": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+
+    "RecurrenceRule": {
+      "type": "object",
+      "required": ["frequency"],
+      "additionalProperties": false,
+      "properties": {
+        "frequency": {
+          "type": "string",
+          "enum": ["daily", "weekly", "monthly", "quarterly", "yearly"]
+        },
+        "interval": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        },
+        "days_of_week": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+          }
+        },
+        "week_of_month": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "day_of_month": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 31
+        },
+        "end_after_occurrences": {
+          "type": "integer"
+        },
+        "end_by_date": {
+          "type": "string",
+          "format": "date"
+        }
+      }
+    },
+
+    "TargetAudience": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "primary_persona_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^persona:[a-z_]+$"
+          },
+          "description": "References to personas defined in Brand Genome"
+        },
+        "audience_overrides": {
+          "$ref": "#/$defs/AudienceOverrides"
+        },
+        "platform_targeting": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/PlatformTargeting" }
+        },
+        "exclusions": {
+          "$ref": "#/$defs/AudienceExclusions"
+        }
+      }
+    },
+
+    "AudienceOverrides": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "age_range": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "gender": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "geo_targets": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "ISO country codes or region identifiers"
+        },
+        "languages": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "interests": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "behaviors": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+
+    "PlatformTargeting": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "job_titles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "job_functions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "seniority": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "industries": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "company_size": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "custom_audiences": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "lookalike_sources": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+
+    "AudienceExclusions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "segments": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "previous_converters": {
+          "type": "boolean"
+        },
+        "existing_customers": {
+          "type": "boolean"
+        },
+        "competitor_employees": {
+          "type": "boolean"
+        }
+      }
+    },
+
+    "CampaignMessaging": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "key_message": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "supporting_messages": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxItems": 10
+        },
+        "emotional_angle": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "rational_angle": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "hook_frameworks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "pain_agitate_solve",
+              "before_after_bridge",
+              "problem_solution",
+              "social_proof_lead",
+              "curiosity_gap",
+              "contrarian",
+              "story_arc",
+              "question_lead",
+              "statistic_lead",
+              "how_to"
+            ]
+          }
+        },
+        "cta_primary": {
+          "$ref": "#/$defs/CallToAction"
+        },
+        "cta_secondary": {
+          "$ref": "#/$defs/CallToAction"
+        },
+        "offer": {
+          "$ref": "#/$defs/Offer"
+        },
+        "hashtags": {
+          "type": "object",
+          "properties": {
+            "campaign_specific": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "always_include": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+
+    "CallToAction": {
+      "type": "object",
+      "required": ["text", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string",
+          "maxLength": 50
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "utm_parameters": {
+          "type": "object",
+          "properties": {
+            "source": { "type": "string" },
+            "medium": { "type": "string" },
+            "campaign": { "type": "string" },
+            "term": { "type": "string" },
+            "content": { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "Offer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["discount", "free_trial", "free_shipping", "bonus", "limited_time", "exclusive", "bundle"]
+        },
+        "description": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "valid_from": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "valid_until": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "terms": {
+          "type": "string"
+        }
+      }
+    },
+
+    "ChannelStrategy": {
+      "type": "object",
+      "required": ["channels"],
+      "additionalProperties": false,
+      "properties": {
+        "channels": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ChannelConfig" },
+          "minItems": 1
+        },
+        "orchestration_mode": {
+          "type": "string",
+          "enum": ["independent", "synchronized", "sequential"],
+          "default": "independent"
+        }
+      }
+    },
+
+    "ChannelConfig": {
+      "type": "object",
+      "required": ["channel", "role"],
+      "additionalProperties": false,
+      "properties": {
+        "channel": {
+          "type": "string",
+          "enum": [
+            "linkedin", "instagram", "facebook", "twitter", "tiktok", "youtube",
+            "email", "sms", "whatsapp",
+            "google_ads", "meta_ads", "linkedin_ads", "tiktok_ads",
+            "blog", "website", "landing_page",
+            "podcast", "webinar", "pr"
+          ]
+        },
+        "role": {
+          "type": "string",
+          "enum": ["primary", "secondary", "supporting", "experimental"]
+        },
+        "content_types": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "frequency": {
+          "type": "object",
+          "properties": {
+            "posts_per_day": { "type": "number", "minimum": 0 },
+            "posts_per_week": { "type": "number", "minimum": 0 },
+            "emails_per_week": { "type": "number", "minimum": 0 },
+            "ads_always_on": { "type": "boolean" }
+          }
+        },
+        "budget_allocation": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "goals": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/KPI" }
+        },
+        "creative_specifications": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+
+    "ContentPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "content_calendar": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ScheduledContent" }
+        },
+        "auto_generation_rules": {
+          "$ref": "#/$defs/AutoGenerationRules"
+        },
+        "content_themes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "theme": { "type": "string" },
+              "weight": { "type": "number", "minimum": 0, "maximum": 1 },
+              "content_types": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+
+    "ScheduledContent": {
+      "type": "object",
+      "required": ["content_id", "type", "scheduled_date"],
+      "additionalProperties": false,
+      "properties": {
+        "content_id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "channel": {
+          "type": "string"
+        },
+        "scheduled_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "phase": {
+          "type": "string"
+        },
+        "brief": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["planned", "generating", "generated", "review", "approved", "scheduled", "published", "failed"]
+        },
+        "asset_ref": {
+          "type": "string",
+          "pattern": "^urn:skyie:asset:"
+        }
+      }
+    },
+
+    "AutoGenerationRules": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "generate_ahead_days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "require_approval": {
+          "type": "boolean",
+          "default": true
+        },
+        "variation_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "regeneration_trigger": {
+          "type": "string",
+          "enum": ["manual", "on_rejection", "on_performance_drop", "scheduled"]
+        },
+        "content_sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["brand_genome", "campaign_brief", "top_performers", "competitor_analysis", "trending_topics"]
+          }
+        }
+      }
+    },
+
+    "CampaignBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "total": {
+          "$ref": "#/$defs/MoneyAmount"
+        },
+        "breakdown": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "daily_limit": {
+          "$ref": "#/$defs/MoneyAmount"
+        },
+        "pacing": {
+          "type": "string",
+          "enum": ["standard", "accelerated", "custom"]
+        },
+        "auto_optimize": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+
+    "MoneyAmount": {
+      "type": "object",
+      "required": ["amount", "currency"],
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        }
+      }
+    },
+
+    "SuccessMetrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reporting_frequency": {
+          "type": "string",
+          "enum": ["daily", "weekly", "biweekly", "monthly"]
+        },
+        "dashboards": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "alerts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/MetricAlert" }
+        },
+        "attribution_model": {
+          "type": "string",
+          "enum": ["last_click", "first_click", "linear", "time_decay", "position_based", "data_driven"]
+        },
+        "tracking_pixels": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "platform": { "type": "string" },
+              "pixel_id": { "type": "string" },
+              "events": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+
+    "MetricAlert": {
+      "type": "object",
+      "required": ["metric", "condition", "threshold"],
+      "additionalProperties": false,
+      "properties": {
+        "metric": {
+          "type": "string"
+        },
+        "condition": {
+          "type": "string",
+          "enum": ["exceeds", "falls_below", "changes_by"]
+        },
+        "threshold": {
+          "type": "number"
+        },
+        "threshold_unit": {
+          "type": "string",
+          "enum": ["absolute", "percentage"]
+        },
+        "action": {
+          "type": "string",
+          "enum": ["notify", "pause", "adjust_budget", "escalate"]
+        },
+        "notify_channels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["email", "slack", "sms", "in_app"]
+          }
+        }
+      }
+    },
+
+    "ComplianceOverrides": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Campaign-specific compliance settings that override Brand Genome",
+      "properties": {
+        "additional_rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "rule_id": { "type": "string" },
+              "reason": { "type": "string" }
+            }
+          }
+        },
+        "disabled_rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "rule_id": { "type": "string" },
+              "reason": { "type": "string" },
+              "approved_by": { "type": "string" },
+              "approved_at": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        "additional_disclaimers": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "approval_overrides": {
+          "type": "object",
+          "properties": {
+            "skip_for": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "require_for": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
