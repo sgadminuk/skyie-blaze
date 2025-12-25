@@ -11,8 +11,12 @@
 name: Deploy to Staging
 
 on:
-  push:
+  # Only deploy when CI pipeline succeeds on main
+  workflow_run:
+    workflows: ["CI Pipeline"]
     branches: [main]
+    types:
+      - completed
   workflow_dispatch:
     inputs:
       version:
@@ -42,6 +46,8 @@ jobs:
   pre-deploy:
     name: Pre-deployment Checks
     runs-on: ubuntu-latest
+    # Only run if triggered manually or if CI workflow succeeded
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     outputs:
       image_tag: ${{ steps.tag.outputs.tag }}
     steps:
