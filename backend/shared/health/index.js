@@ -78,9 +78,7 @@ class HealthChecker {
       try {
         const healthy = await Promise.race([
           checkFn(),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Timeout')), 5000)
-          ),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000)),
         ]);
         results[name] = {
           status: healthy ? HealthStatus.HEALTHY : HealthStatus.UNHEALTHY,
@@ -104,9 +102,7 @@ class HealthChecker {
    */
   async getHealth() {
     const dependencies = await this.checkDependencies();
-    const allHealthy = Object.values(dependencies).every(
-      (d) => d.status === HealthStatus.HEALTHY
-    );
+    const allHealthy = Object.values(dependencies).every((d) => d.status === HealthStatus.HEALTHY);
     const anyUnhealthy = Object.values(dependencies).some(
       (d) => d.status === HealthStatus.UNHEALTHY
     );
@@ -148,9 +144,7 @@ class HealthChecker {
    */
   async getReadiness() {
     const dependencies = await this.checkDependencies();
-    const isReady = Object.values(dependencies).every(
-      (d) => d.status === HealthStatus.HEALTHY
-    );
+    const isReady = Object.values(dependencies).every((d) => d.status === HealthStatus.HEALTHY);
 
     return {
       status: isReady ? HealthStatus.HEALTHY : HealthStatus.UNHEALTHY,

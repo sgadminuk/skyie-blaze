@@ -19,8 +19,8 @@ services:
   # ---------------------------------------------------------------------------
   brand-service:
     image: ghcr.io/sgadminuk/skyie-blaze/brand-service:${APP_VERSION:-latest}
-    build: {}  # Disable build in staging
-    ports: []  # No exposed ports - Traefik handles routing
+    build: {} # Disable build in staging
+    ports: [] # No exposed ports - Traefik handles routing
     environment:
       - NODE_ENV=staging
       - LOG_LEVEL=info
@@ -29,29 +29,29 @@ services:
       - traefik
     labels:
       # Enable Traefik for this service
-      - "traefik.enable=true"
-      - "traefik.docker.network=traefik"
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=traefik'
 
       # HTTPS Redirect Middleware (defined here, shared by all)
-      - "traefik.http.middlewares.skyie-blaze-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.skyie-blaze-https-redirect.redirectscheme.permanent=true"
+      - 'traefik.http.middlewares.skyie-blaze-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.middlewares.skyie-blaze-https-redirect.redirectscheme.permanent=true'
 
       # HTTP Router - Redirect to HTTPS
-      - "traefik.http.routers.skyie-blaze-brand-http.rule=Host(`api.staging.skyie.io`) && PathPrefix(`/v1/brands`)"
-      - "traefik.http.routers.skyie-blaze-brand-http.entrypoints=web"
-      - "traefik.http.routers.skyie-blaze-brand-http.middlewares=skyie-blaze-https-redirect"
+      - 'traefik.http.routers.skyie-blaze-brand-http.rule=Host(`api.staging.skyie.io`) && PathPrefix(`/v1/brands`)'
+      - 'traefik.http.routers.skyie-blaze-brand-http.entrypoints=web'
+      - 'traefik.http.routers.skyie-blaze-brand-http.middlewares=skyie-blaze-https-redirect'
 
       # HTTPS Router
-      - "traefik.http.routers.skyie-blaze-brand.rule=Host(`api.staging.skyie.io`) && PathPrefix(`/v1/brands`)"
-      - "traefik.http.routers.skyie-blaze-brand.entrypoints=websecure"
-      - "traefik.http.routers.skyie-blaze-brand.tls=true"
-      - "traefik.http.routers.skyie-blaze-brand.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.skyie-blaze-brand.service=skyie-blaze-brand"
+      - 'traefik.http.routers.skyie-blaze-brand.rule=Host(`api.staging.skyie.io`) && PathPrefix(`/v1/brands`)'
+      - 'traefik.http.routers.skyie-blaze-brand.entrypoints=websecure'
+      - 'traefik.http.routers.skyie-blaze-brand.tls=true'
+      - 'traefik.http.routers.skyie-blaze-brand.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.skyie-blaze-brand.service=skyie-blaze-brand'
 
       # Service configuration
-      - "traefik.http.services.skyie-blaze-brand.loadbalancer.server.port=3000"
-      - "traefik.http.services.skyie-blaze-brand.loadbalancer.healthcheck.path=/health"
-      - "traefik.http.services.skyie-blaze-brand.loadbalancer.healthcheck.interval=30s"
+      - 'traefik.http.services.skyie-blaze-brand.loadbalancer.server.port=3000'
+      - 'traefik.http.services.skyie-blaze-brand.loadbalancer.healthcheck.path=/health'
+      - 'traefik.http.services.skyie-blaze-brand.loadbalancer.healthcheck.interval=30s'
 
   # ---------------------------------------------------------------------------
   # Campaign Service - Traefik Enabled
@@ -67,25 +67,25 @@ services:
       - skyie-internal
       - traefik
     labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=traefik"
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=traefik'
 
       # HTTP Router - Redirect to HTTPS
-      - "traefik.http.routers.skyie-blaze-campaign-http.rule=Host(`api.staging.skyie.io`) && PathPrefix(`/v1/campaigns`)"
-      - "traefik.http.routers.skyie-blaze-campaign-http.entrypoints=web"
-      - "traefik.http.routers.skyie-blaze-campaign-http.middlewares=skyie-blaze-https-redirect"
+      - 'traefik.http.routers.skyie-blaze-campaign-http.rule=Host(`api.staging.skyie.io`) && PathPrefix(`/v1/campaigns`)'
+      - 'traefik.http.routers.skyie-blaze-campaign-http.entrypoints=web'
+      - 'traefik.http.routers.skyie-blaze-campaign-http.middlewares=skyie-blaze-https-redirect'
 
       # HTTPS Router
-      - "traefik.http.routers.skyie-blaze-campaign.rule=Host(`api.staging.skyie.io`) && PathPrefix(`/v1/campaigns`)"
-      - "traefik.http.routers.skyie-blaze-campaign.entrypoints=websecure"
-      - "traefik.http.routers.skyie-blaze-campaign.tls=true"
-      - "traefik.http.routers.skyie-blaze-campaign.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.skyie-blaze-campaign.service=skyie-blaze-campaign"
+      - 'traefik.http.routers.skyie-blaze-campaign.rule=Host(`api.staging.skyie.io`) && PathPrefix(`/v1/campaigns`)'
+      - 'traefik.http.routers.skyie-blaze-campaign.entrypoints=websecure'
+      - 'traefik.http.routers.skyie-blaze-campaign.tls=true'
+      - 'traefik.http.routers.skyie-blaze-campaign.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.skyie-blaze-campaign.service=skyie-blaze-campaign'
 
       # Service configuration
-      - "traefik.http.services.skyie-blaze-campaign.loadbalancer.server.port=3000"
-      - "traefik.http.services.skyie-blaze-campaign.loadbalancer.healthcheck.path=/health"
-      - "traefik.http.services.skyie-blaze-campaign.loadbalancer.healthcheck.interval=30s"
+      - 'traefik.http.services.skyie-blaze-campaign.loadbalancer.server.port=3000'
+      - 'traefik.http.services.skyie-blaze-campaign.loadbalancer.healthcheck.path=/health'
+      - 'traefik.http.services.skyie-blaze-campaign.loadbalancer.healthcheck.interval=30s'
 
   # ---------------------------------------------------------------------------
   # Enforcement Engine - Traefik Enabled
@@ -101,33 +101,34 @@ services:
       - skyie-internal
       - traefik
     labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=traefik"
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=traefik'
 
       # HTTP Router - Redirect to HTTPS
-      - "traefik.http.routers.skyie-blaze-enforcement-http.rule=Host(`api.staging.skyie.io`) && PathPrefix(`/v1/content`)"
-      - "traefik.http.routers.skyie-blaze-enforcement-http.entrypoints=web"
-      - "traefik.http.routers.skyie-blaze-enforcement-http.middlewares=skyie-blaze-https-redirect"
+      - 'traefik.http.routers.skyie-blaze-enforcement-http.rule=Host(`api.staging.skyie.io`) && PathPrefix(`/v1/content`)'
+      - 'traefik.http.routers.skyie-blaze-enforcement-http.entrypoints=web'
+      - 'traefik.http.routers.skyie-blaze-enforcement-http.middlewares=skyie-blaze-https-redirect'
 
       # HTTPS Router
-      - "traefik.http.routers.skyie-blaze-enforcement.rule=Host(`api.staging.skyie.io`) && PathPrefix(`/v1/content`)"
-      - "traefik.http.routers.skyie-blaze-enforcement.entrypoints=websecure"
-      - "traefik.http.routers.skyie-blaze-enforcement.tls=true"
-      - "traefik.http.routers.skyie-blaze-enforcement.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.skyie-blaze-enforcement.service=skyie-blaze-enforcement"
+      - 'traefik.http.routers.skyie-blaze-enforcement.rule=Host(`api.staging.skyie.io`) && PathPrefix(`/v1/content`)'
+      - 'traefik.http.routers.skyie-blaze-enforcement.entrypoints=websecure'
+      - 'traefik.http.routers.skyie-blaze-enforcement.tls=true'
+      - 'traefik.http.routers.skyie-blaze-enforcement.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.skyie-blaze-enforcement.service=skyie-blaze-enforcement'
 
       # Service configuration
-      - "traefik.http.services.skyie-blaze-enforcement.loadbalancer.server.port=3000"
-      - "traefik.http.services.skyie-blaze-enforcement.loadbalancer.healthcheck.path=/health"
-      - "traefik.http.services.skyie-blaze-enforcement.loadbalancer.healthcheck.interval=30s"
+      - 'traefik.http.services.skyie-blaze-enforcement.loadbalancer.server.port=3000'
+      - 'traefik.http.services.skyie-blaze-enforcement.loadbalancer.healthcheck.path=/health'
+      - 'traefik.http.services.skyie-blaze-enforcement.loadbalancer.healthcheck.interval=30s'
 
   # ---------------------------------------------------------------------------
   # Infrastructure - No external exposure
   # ---------------------------------------------------------------------------
   postgres:
-    ports: []  # Don't expose DB port in staging
+    ports: [] # Don't expose DB port in staging
 
   redis:
-    ports: []  # Don't expose Redis port in staging
+    ports: [] # Don't expose Redis port in staging
+
 
   # nginx is NOT deployed - Traefik handles routing

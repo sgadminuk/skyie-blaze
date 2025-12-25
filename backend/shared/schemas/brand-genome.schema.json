@@ -6,56 +6,56 @@
   "type": "object",
   "required": ["$schema", "id", "version", "identity", "visual_identity", "verbal_identity"],
   "additionalProperties": false,
-  
+
   "properties": {
     "$schema": {
       "type": "string",
       "const": "https://skyie.io/schemas/brand-genome/v1.0.0/brand-genome.schema.json"
     },
-    
+
     "id": {
       "type": "string",
       "pattern": "^urn:skyie:brand:[a-z0-9_-]+:[a-z0-9_-]+$",
       "description": "Unique identifier in URN format: urn:skyie:brand:{org_id}:{brand_id}"
     },
-    
+
     "version": {
       "$ref": "#/$defs/Version"
     },
-    
+
     "identity": {
       "$ref": "#/$defs/BrandIdentity"
     },
-    
+
     "visual_identity": {
       "$ref": "#/$defs/VisualIdentity"
     },
-    
+
     "verbal_identity": {
       "$ref": "#/$defs/VerbalIdentity"
     },
-    
+
     "compliance": {
       "$ref": "#/$defs/ComplianceConfig"
     },
-    
+
     "audience": {
       "$ref": "#/$defs/AudienceConfig"
     },
-    
+
     "content_strategy": {
       "$ref": "#/$defs/ContentStrategy"
     },
-    
+
     "platform_rules": {
       "$ref": "#/$defs/PlatformRules"
     },
-    
+
     "metadata": {
       "$ref": "#/$defs/GenomeMetadata"
     }
   },
-  
+
   "$defs": {
     "Version": {
       "type": "object",
@@ -101,7 +101,7 @@
         }
       }
     },
-    
+
     "BrandIdentity": {
       "type": "object",
       "required": ["name"],
@@ -155,7 +155,7 @@
         }
       }
     },
-    
+
     "BrandPersonality": {
       "type": "object",
       "additionalProperties": false,
@@ -165,8 +165,18 @@
           "items": {
             "type": "string",
             "enum": [
-              "Innocent", "Explorer", "Sage", "Hero", "Outlaw", "Magician",
-              "Regular Guy", "Lover", "Jester", "Caregiver", "Creator", "Ruler"
+              "Innocent",
+              "Explorer",
+              "Sage",
+              "Hero",
+              "Outlaw",
+              "Magician",
+              "Regular Guy",
+              "Lover",
+              "Jester",
+              "Caregiver",
+              "Creator",
+              "Ruler"
             ]
           },
           "maxItems": 3,
@@ -184,7 +194,7 @@
         }
       }
     },
-    
+
     "VisualIdentity": {
       "type": "object",
       "required": ["colors", "typography"],
@@ -210,7 +220,7 @@
         }
       }
     },
-    
+
     "LogoSystem": {
       "type": "object",
       "additionalProperties": false,
@@ -235,7 +245,7 @@
         }
       }
     },
-    
+
     "LogoVariant": {
       "type": "object",
       "required": ["url", "format"],
@@ -274,7 +284,7 @@
         }
       }
     },
-    
+
     "ColorSystem": {
       "type": "object",
       "required": ["primary"],
@@ -304,7 +314,7 @@
         }
       }
     },
-    
+
     "BrandColor": {
       "type": "object",
       "required": ["hex"],
@@ -350,12 +360,12 @@
         }
       }
     },
-    
+
     "HexColor": {
       "type": "string",
       "pattern": "^#[A-Fa-f0-9]{6}$"
     },
-    
+
     "RGBColor": {
       "type": "object",
       "required": ["r", "g", "b"],
@@ -366,7 +376,7 @@
         "b": { "type": "integer", "minimum": 0, "maximum": 255 }
       }
     },
-    
+
     "HSLColor": {
       "type": "object",
       "required": ["h", "s", "l"],
@@ -377,7 +387,7 @@
         "l": { "type": "number", "minimum": 0, "maximum": 100 }
       }
     },
-    
+
     "CMYKColor": {
       "type": "object",
       "required": ["c", "m", "y", "k"],
@@ -389,7 +399,7 @@
         "k": { "type": "number", "minimum": 0, "maximum": 100 }
       }
     },
-    
+
     "ColorAccessibility": {
       "type": "object",
       "additionalProperties": false,
@@ -406,7 +416,7 @@
         }
       }
     },
-    
+
     "NeutralPalette": {
       "type": "object",
       "additionalProperties": false,
@@ -421,7 +431,7 @@
         "divider": { "$ref": "#/$defs/HexColor" }
       }
     },
-    
+
     "SemanticColors": {
       "type": "object",
       "additionalProperties": false,
@@ -432,7 +442,7 @@
         "info": { "$ref": "#/$defs/HexColor" }
       }
     },
-    
+
     "GradientRules": {
       "type": "object",
       "additionalProperties": false,
@@ -456,7 +466,7 @@
         }
       }
     },
-    
+
     "Gradient": {
       "type": "object",
       "required": ["type", "stops"],
@@ -486,7 +496,7 @@
         }
       }
     },
-    
+
     "TypographySystem": {
       "type": "object",
       "required": ["primary_font", "hierarchy"],
@@ -506,7 +516,7 @@
         }
       }
     },
-    
+
     "FontDefinition": {
       "type": "object",
       "required": ["family"],
@@ -542,7 +552,7 @@
         }
       }
     },
-    
+
     "TypeHierarchy": {
       "type": "object",
       "additionalProperties": false,
@@ -562,7 +572,7 @@
         "button": { "$ref": "#/$defs/TypeStyle" }
       }
     },
-    
+
     "TypeStyle": {
       "type": "object",
       "additionalProperties": false,
@@ -588,7 +598,7 @@
         }
       }
     },
-    
+
     "SpacingSystem": {
       "type": "object",
       "additionalProperties": false,
@@ -619,7 +629,7 @@
         }
       }
     },
-    
+
     "ImageryGuidelines": {
       "type": "object",
       "additionalProperties": false,
@@ -635,7 +645,7 @@
         }
       }
     },
-    
+
     "PhotographyStyle": {
       "type": "object",
       "additionalProperties": false,
@@ -664,7 +674,7 @@
         }
       }
     },
-    
+
     "IllustrationStyle": {
       "type": "object",
       "additionalProperties": false,
@@ -679,7 +689,7 @@
         }
       }
     },
-    
+
     "IconStyle": {
       "type": "object",
       "additionalProperties": false,
@@ -693,7 +703,7 @@
         "grid_size": { "type": "integer" }
       }
     },
-    
+
     "MotionGuidelines": {
       "type": "object",
       "additionalProperties": false,
@@ -721,7 +731,7 @@
         }
       }
     },
-    
+
     "VerbalIdentity": {
       "type": "object",
       "required": ["voice"],
@@ -745,7 +755,7 @@
         }
       }
     },
-    
+
     "VoiceParameters": {
       "type": "object",
       "additionalProperties": false,
@@ -789,7 +799,7 @@
         }
       }
     },
-    
+
     "ToneContext": {
       "type": "object",
       "required": ["context", "adjustments"],
@@ -797,7 +807,16 @@
       "properties": {
         "context": {
           "type": "string",
-          "enum": ["marketing", "sales", "support", "crisis", "legal", "social", "email", "formal_comms"]
+          "enum": [
+            "marketing",
+            "sales",
+            "support",
+            "crisis",
+            "legal",
+            "social",
+            "email",
+            "formal_comms"
+          ]
         },
         "adjustments": {
           "$ref": "#/$defs/VoiceParameters"
@@ -808,7 +827,7 @@
         }
       }
     },
-    
+
     "WritingRules": {
       "type": "object",
       "additionalProperties": false,
@@ -861,7 +880,7 @@
         }
       }
     },
-    
+
     "VocabularyRules": {
       "type": "object",
       "additionalProperties": false,
@@ -899,7 +918,7 @@
         }
       }
     },
-    
+
     "MessagingFramework": {
       "type": "object",
       "additionalProperties": false,
@@ -940,7 +959,7 @@
         }
       }
     },
-    
+
     "ComplianceConfig": {
       "type": "object",
       "additionalProperties": false,
@@ -984,7 +1003,7 @@
         }
       }
     },
-    
+
     "ComplianceRule": {
       "type": "object",
       "required": ["rule_id", "description", "enforcement"],
@@ -1018,7 +1037,7 @@
         }
       }
     },
-    
+
     "Disclaimer": {
       "type": "object",
       "required": ["disclaimer_id", "text", "trigger_conditions"],
@@ -1053,7 +1072,7 @@
         }
       }
     },
-    
+
     "ApprovalWorkflow": {
       "type": "object",
       "additionalProperties": false,
@@ -1077,7 +1096,7 @@
         }
       }
     },
-    
+
     "AudienceConfig": {
       "type": "object",
       "additionalProperties": false,
@@ -1092,7 +1111,7 @@
         }
       }
     },
-    
+
     "Persona": {
       "type": "object",
       "required": ["persona_id", "name"],
@@ -1174,7 +1193,7 @@
         }
       }
     },
-    
+
     "AntiPersona": {
       "type": "object",
       "required": ["description", "exclusion_reason"],
@@ -1188,7 +1207,7 @@
         }
       }
     },
-    
+
     "ContentStrategy": {
       "type": "object",
       "additionalProperties": false,
@@ -1207,7 +1226,7 @@
         }
       }
     },
-    
+
     "ContentPillar": {
       "type": "object",
       "required": ["pillar_id", "name"],
@@ -1227,7 +1246,7 @@
         }
       }
     },
-    
+
     "ContentTypeRules": {
       "type": "object",
       "additionalProperties": false,
@@ -1253,12 +1272,12 @@
         }
       }
     },
-    
+
     "PlatformRules": {
       "type": "object",
       "additionalProperties": { "$ref": "#/$defs/PlatformConfig" }
     },
-    
+
     "PlatformConfig": {
       "type": "object",
       "additionalProperties": false,
@@ -1307,7 +1326,7 @@
         }
       }
     },
-    
+
     "GenomeMetadata": {
       "type": "object",
       "additionalProperties": false,
@@ -1334,7 +1353,7 @@
         }
       }
     },
-    
+
     "ExtractionSource": {
       "type": "object",
       "required": ["source_type"],

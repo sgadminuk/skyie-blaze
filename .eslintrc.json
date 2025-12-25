@@ -16,13 +16,5 @@
     "eqeqeq": ["error", "always"],
     "no-var": "error"
   },
-  "ignorePatterns": [
-    "node_modules/",
-    "dist/",
-    "coverage/",
-    "reports/",
-    "*.min.js",
-    "*.ts",
-    "*.tsx"
-  ]
+  "ignorePatterns": ["node_modules/", "dist/", "coverage/", "reports/", "*.min.js", "*.ts", "*.tsx"]
 }

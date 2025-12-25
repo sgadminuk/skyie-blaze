@@ -80,7 +80,7 @@ interface NavigationSection {
   label: string;
   icon: IconType;
   status: 'pending' | 'in_review' | 'confirmed' | 'has_issues';
-  confidence: number;        // 0-100
+  confidence: number; // 0-100
   issueCount: number;
   subsections?: {
     id: string;
@@ -100,8 +100,8 @@ const sections: NavigationSection[] = [
     subsections: [
       { id: 'name', label: 'Name & Tagline', status: 'confirmed' },
       { id: 'mission', label: 'Mission & Vision', status: 'confirmed' },
-      { id: 'personality', label: 'Personality', status: 'in_review' }
-    ]
+      { id: 'personality', label: 'Personality', status: 'in_review' },
+    ],
   },
   {
     id: 'colors',
@@ -113,8 +113,8 @@ const sections: NavigationSection[] = [
     subsections: [
       { id: 'primary', label: 'Primary Colors', status: 'confirmed' },
       { id: 'secondary', label: 'Secondary Colors', status: 'has_issues' },
-      { id: 'semantic', label: 'Semantic Colors', status: 'pending' }
-    ]
+      { id: 'semantic', label: 'Semantic Colors', status: 'pending' },
+    ],
   },
   // ... other sections
 ];
@@ -122,12 +122,12 @@ const sections: NavigationSection[] = [
 
 **Visual States:**
 
-| Status | Icon | Color | Description |
-|--------|------|-------|-------------|
-| `pending` | ○ | Gray | Not yet reviewed |
-| `in_review` | ◐ | Blue | Currently being reviewed |
-| `confirmed` | ● | Green | User has confirmed |
-| `has_issues` | ⚠ | Orange | Has unresolved issues |
+| Status       | Icon | Color  | Description              |
+| ------------ | ---- | ------ | ------------------------ |
+| `pending`    | ○    | Gray   | Not yet reviewed         |
+| `in_review`  | ◐    | Blue   | Currently being reviewed |
+| `confirmed`  | ●    | Green  | User has confirmed       |
+| `has_issues` | ⚠    | Orange | Has unresolved issues    |
 
 ---
 
@@ -139,7 +139,7 @@ Shows extraction confidence for each field or section.
 
 ```typescript
 interface ConfidenceIndicatorProps {
-  value: number;           // 0-1
+  value: number; // 0-1
   source: ExtractionSource;
   showDetails: boolean;
 }
@@ -151,6 +151,7 @@ interface ConfidenceIndicatorProps {
 ```
 
 **Design:**
+
 - Progress bar with color coding:
   - `>= 0.9`: Green (#34A853)
   - `>= 0.7`: Blue (#1A73E8)
@@ -165,7 +166,7 @@ Inline editing with source comparison.
 
 ```tsx
 interface EditableFieldProps {
-  fieldPath: string;           // e.g., "identity.tagline"
+  fieldPath: string; // e.g., "identity.tagline"
   label: string;
   value: string | string[];
   confidence: number;
@@ -189,42 +190,38 @@ function EditableField({ fieldPath, label, value, confidence, source }: Editable
         <label>{label}</label>
         <ConfidenceIndicator value={confidence} source={source} />
       </div>
-      
+
       <div className="field-content">
         <div className="current-value" onClick={enableEditing}>
           {value || <span className="placeholder">Click to add</span>}
           <EditIcon className="edit-affordance" />
         </div>
-        
+
         {isEditing && (
           <div className="edit-controls">
-            <input 
-              value={editValue}
-              onChange={handleChange}
-              onBlur={saveAndClose}
-              autoFocus
-            />
+            <input value={editValue} onChange={handleChange} onBlur={saveAndClose} autoFocus />
             <ValidationFeedback errors={validationErrors} />
           </div>
         )}
       </div>
-      
-      {showSource && (
-        <SourcePreview source={source} highlight={value} />
-      )}
+
+      {showSource && <SourcePreview source={source} highlight={value} />}
     </div>
   );
 }
 ```
 
 **Styling:**
+
 ```css
 .editable-field {
   padding: 16px;
   border-radius: 8px;
   border: 1px solid var(--border-color);
   margin-bottom: 12px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .editable-field:hover {
@@ -268,48 +265,40 @@ function ColorSwatch({ color, confidence, source, onEdit, onDelete }: ColorSwatc
   return (
     <div className="color-swatch-card">
       {/* Large color preview */}
-      <div 
+      <div
         className="color-preview"
         style={{ backgroundColor: color.hex }}
         onClick={openColorPicker}
       >
         {/* Contrast text overlay showing hex */}
-        <span className={getContrastClass(color.hex)}>
-          {color.hex}
-        </span>
+        <span className={getContrastClass(color.hex)}>{color.hex}</span>
       </div>
-      
+
       {/* Color name and semantic meaning */}
       <div className="color-details">
-        <EditableField
-          label="Name"
-          value={color.name}
-          placeholder="e.g., Sky Blue"
-        />
+        <EditableField label="Name" value={color.name} placeholder="e.g., Sky Blue" />
         <EditableField
           label="Usage"
           value={color.usage?.join(', ')}
           placeholder="Where should this color be used?"
         />
       </div>
-      
+
       {/* Color format alternatives */}
       <div className="color-formats">
         <code>HEX: {color.hex}</code>
-        <code>RGB: {color.rgb.r}, {color.rgb.g}, {color.rgb.b}</code>
+        <code>
+          RGB: {color.rgb.r}, {color.rgb.g}, {color.rgb.b}
+        </code>
         {color.pantone && <code>Pantone: {color.pantone}</code>}
       </div>
-      
+
       {/* Accessibility info */}
       <div className="accessibility-badges">
-        {color.accessibility?.wcag_aa_on_white && (
-          <Badge variant="success">AA on White</Badge>
-        )}
-        {color.accessibility?.wcag_aaa_on_white && (
-          <Badge variant="success">AAA on White</Badge>
-        )}
+        {color.accessibility?.wcag_aa_on_white && <Badge variant="success">AA on White</Badge>}
+        {color.accessibility?.wcag_aaa_on_white && <Badge variant="success">AAA on White</Badge>}
       </div>
-      
+
       {/* Confidence and source */}
       <ConfidenceIndicator value={confidence} source={source} />
     </div>
@@ -318,6 +307,7 @@ function ColorSwatch({ color, confidence, source, onEdit, onDelete }: ColorSwatc
 ```
 
 **Layout Grid for Colors:**
+
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │  PRIMARY COLOR                                                           │
@@ -364,10 +354,7 @@ function TypographyPreview({ typography, confidence }: TypographyPreviewProps) {
       {/* Font family selector */}
       <div className="font-family-section">
         <h3>Primary Font</h3>
-        <FontSelector
-          value={typography.primary_font}
-          onChange={handleFontChange}
-        />
+        <FontSelector value={typography.primary_font} onChange={handleFontChange} />
         <div className="font-preview" style={{ fontFamily: typography.primary_font.family }}>
           The quick brown fox jumps over the lazy dog
           <br />
@@ -378,7 +365,7 @@ function TypographyPreview({ typography, confidence }: TypographyPreviewProps) {
           0123456789 !@#$%^&*()
         </div>
       </div>
-      
+
       {/* Type scale preview */}
       <div className="type-scale-section">
         <h3>Type Scale</h3>
@@ -401,19 +388,19 @@ function TypeScaleRow({ level, style }: { level: string; style: TypeStyle }) {
     h2: 'Section Header',
     h3: 'Subsection Title',
     body: 'Body text that forms the main content of your marketing materials.',
-    caption: 'Caption or fine print text'
+    caption: 'Caption or fine print text',
   };
 
   return (
     <div className="type-scale-row">
       <div className="level-label">{level}</div>
-      <div 
+      <div
         className="level-preview"
         style={{
           fontSize: `${style.size_px}px`,
           fontWeight: style.weight,
           lineHeight: style.line_height,
-          letterSpacing: style.letter_spacing
+          letterSpacing: style.letter_spacing,
         }}
       >
         {sampleText[level] || level}
@@ -445,17 +432,23 @@ interface VoiceSliderProps {
 }
 
 function VoiceSlider({
-  parameter, label, value, leftLabel, rightLabel, description, onChange
+  parameter,
+  label,
+  value,
+  leftLabel,
+  rightLabel,
+  description,
+  onChange,
 }: VoiceSliderProps) {
   const examples = getExamplesForParameter(parameter, value);
-  
+
   return (
     <div className="voice-slider">
       <div className="slider-header">
         <span className="parameter-label">{label}</span>
         <span className="parameter-value">{Math.round(value * 100)}%</span>
       </div>
-      
+
       <div className="slider-track">
         <span className="left-label">{leftLabel}</span>
         <input
@@ -467,9 +460,9 @@ function VoiceSlider({
         />
         <span className="right-label">{rightLabel}</span>
       </div>
-      
+
       <p className="parameter-description">{description}</p>
-      
+
       {/* Live example based on current value */}
       <div className="example-output">
         <span className="example-label">Example output:</span>
@@ -492,7 +485,7 @@ function VoiceParametersSection({ voice, onChange }: VoiceParametersSectionProps
         description="How formal or casual should the brand voice be?"
         onChange={(v) => onChange({ ...voice, formality: v })}
       />
-      
+
       <VoiceSlider
         parameter="warmth"
         label="Warmth"
@@ -502,7 +495,7 @@ function VoiceParametersSection({ voice, onChange }: VoiceParametersSectionProps
         description="How approachable and friendly should the tone be?"
         onChange={(v) => onChange({ ...voice, warmth: v })}
       />
-      
+
       <VoiceSlider
         parameter="confidence"
         label="Confidence"
@@ -512,7 +505,7 @@ function VoiceParametersSection({ voice, onChange }: VoiceParametersSectionProps
         description="How assertive should claims and statements be?"
         onChange={(v) => onChange({ ...voice, confidence: v })}
       />
-      
+
       <VoiceSlider
         parameter="technical_level"
         label="Technical Level"
@@ -522,7 +515,7 @@ function VoiceParametersSection({ voice, onChange }: VoiceParametersSectionProps
         description="What level of technical vocabulary should be used?"
         onChange={(v) => onChange({ ...voice, technical_level: v })}
       />
-      
+
       <VoiceSlider
         parameter="humor"
         label="Humor"
@@ -554,9 +547,9 @@ function VocabularyList({ title, words, type, onAdd, onRemove }: VocabularyListP
   const colorMap = {
     preferred: { bg: '#E8F5E9', border: '#4CAF50', icon: '✓' },
     avoid: { bg: '#FFF3E0', border: '#FF9800', icon: '⚠' },
-    banned: { bg: '#FFEBEE', border: '#F44336', icon: '✗' }
+    banned: { bg: '#FFEBEE', border: '#F44336', icon: '✗' },
   };
-  
+
   return (
     <div className="vocabulary-list" style={{ borderColor: colorMap[type].border }}>
       <h4>{title}</h4>
@@ -565,9 +558,9 @@ function VocabularyList({ title, words, type, onAdd, onRemove }: VocabularyListP
         {type === 'avoid' && 'Words to minimize or use carefully'}
         {type === 'banned' && 'Words that must never appear'}
       </p>
-      
+
       <div className="word-chips">
-        {words.map(word => (
+        {words.map((word) => (
           <Chip
             key={word}
             label={word}
@@ -606,26 +599,28 @@ function ComplianceRuleCard({ rule, onToggle, onEdit }: ComplianceRuleCardProps)
         </div>
         <Toggle checked={true} onChange={onToggle} />
       </div>
-      
+
       <h4 className="rule-id">{rule.rule_id}</h4>
       <p className="rule-description">{rule.description}</p>
-      
+
       {rule.regulation && (
         <div className="regulation-tag">
           <LegalIcon />
           {rule.regulation}
         </div>
       )}
-      
+
       <div className="rule-triggers">
         <span>Triggers when:</span>
         <ul>
           {rule.trigger_conditions?.map((condition, i) => (
-            <li key={i}><code>{condition}</code></li>
+            <li key={i}>
+              <code>{condition}</code>
+            </li>
           ))}
         </ul>
       </div>
-      
+
       <button className="edit-rule-button" onClick={onEdit}>
         Configure Rule
       </button>
@@ -696,12 +691,16 @@ function LowConfidenceAlert({ field, confidence, source }: LowConfidenceAlertPro
       <div className="alert-content">
         <strong>Low confidence extraction</strong>
         <p>
-          We're {Math.round(confidence * 100)}% confident about this value. 
-          Please review the source material and confirm or correct.
+          We're {Math.round(confidence * 100)}% confident about this value. Please review the source
+          material and confirm or correct.
         </p>
         <div className="alert-actions">
-          <Button variant="outline" onClick={viewSource}>View Source</Button>
-          <Button variant="primary" onClick={confirmValue}>Confirm Value</Button>
+          <Button variant="outline" onClick={viewSource}>
+            View Source
+          </Button>
+          <Button variant="primary" onClick={confirmValue}>
+            Confirm Value
+          </Button>
         </div>
       </div>
     </Alert>
@@ -715,12 +714,12 @@ function LowConfidenceAlert({ field, confidence, source }: LowConfidenceAlertPro
 
 ### 5.1 Breakpoints
 
-| Breakpoint | Width | Layout Changes |
-|------------|-------|----------------|
-| Desktop XL | >= 1440px | Full 3-column layout with source panel |
-| Desktop | >= 1024px | 2-column with collapsible source panel |
-| Tablet | >= 768px | Single column with bottom sheet for source |
-| Mobile | < 768px | Single column, simplified controls |
+| Breakpoint | Width     | Layout Changes                             |
+| ---------- | --------- | ------------------------------------------ |
+| Desktop XL | >= 1440px | Full 3-column layout with source panel     |
+| Desktop    | >= 1024px | 2-column with collapsible source panel     |
+| Tablet     | >= 768px  | Single column with bottom sheet for source |
+| Mobile     | < 768px   | Single column, simplified controls         |
 
 ### 5.2 Mobile Adaptations
 
@@ -736,14 +735,14 @@ function LowConfidenceAlert({ field, confidence, source }: LowConfidenceAlertPro
 
 ### 6.1 Keyboard Navigation
 
-| Key | Action |
-|-----|--------|
-| `Tab` | Move between sections |
-| `Enter` / `Space` | Activate/edit focused field |
-| `Escape` | Cancel edit, close panels |
-| `Ctrl + S` | Save current changes |
-| `Ctrl + Enter` | Confirm section |
-| `Arrow keys` | Adjust slider values (when focused) |
+| Key               | Action                              |
+| ----------------- | ----------------------------------- |
+| `Tab`             | Move between sections               |
+| `Enter` / `Space` | Activate/edit focused field         |
+| `Escape`          | Cancel edit, close panels           |
+| `Ctrl + S`        | Save current changes                |
+| `Ctrl + Enter`    | Confirm section                     |
+| `Arrow keys`      | Adjust slider values (when focused) |
 
 ### 6.2 Screen Reader Announcements
 
@@ -757,7 +756,7 @@ function LowConfidenceAlert({ field, confidence, source }: LowConfidenceAlertPro
   {/* Visual content */}
 </div>
 <div id={`color-${color.hex}-description`} className="sr-only">
-  {color.usage?.join(', ')}. 
+  {color.usage?.join(', ')}.
   {color.accessibility?.wcag_aa_on_white ? 'Meets WCAG AA contrast requirements.' : ''}
 </div>
 ```
@@ -776,10 +775,10 @@ All interactive elements meet WCAG AAA (7:1) contrast requirements.
 interface BrandReviewState {
   // The genome being reviewed
   genome: BrandGenome;
-  
+
   // Original extracted values (for comparison)
   originalGenome: BrandGenome;
-  
+
   // Section-level state
   sections: {
     [sectionId: string]: {
@@ -790,7 +789,7 @@ interface BrandReviewState {
       notes: string;
     };
   };
-  
+
   // Field-level changes
   pendingChanges: {
     [fieldPath: string]: {
@@ -800,7 +799,7 @@ interface BrandReviewState {
       changedBy: string;
     };
   };
-  
+
   // UI state
   ui: {
     activeSectionId: string;
@@ -840,13 +839,14 @@ const AUTOSAVE_DELAY = 2000; // 2 seconds
 
 function useAutoSave(genome: BrandGenome, pendingChanges: PendingChanges) {
   const debouncedSave = useMemo(
-    () => debounce(async (changes) => {
-      await api.brands.patch(genome.id, changes);
-      showToast('Changes saved');
-    }, AUTOSAVE_DELAY),
+    () =>
+      debounce(async (changes) => {
+        await api.brands.patch(genome.id, changes);
+        showToast('Changes saved');
+      }, AUTOSAVE_DELAY),
     [genome.id]
   );
-  
+
   useEffect(() => {
     if (Object.keys(pendingChanges).length > 0) {
       debouncedSave(pendingChanges);
@@ -861,7 +861,7 @@ function useAutoSave(genome: BrandGenome, pendingChanges: PendingChanges) {
 function handleFieldChange(fieldPath: string, newValue: any) {
   // Immediately update UI
   dispatch({ type: 'SET_FIELD_VALUE', fieldPath, value: newValue });
-  
+
   // Queue for auto-save (will be debounced)
   // On error, revert to original value
 }
@@ -914,17 +914,7 @@ All components use the Skyie Design System. Key dependencies:
 - `@skyie/font-picker` — Font selection with Google Fonts integration
 
 ```tsx
-import {
-  Button,
-  Toggle,
-  Slider,
-  Chip,
-  Badge,
-  Alert,
-  Toast,
-  Modal,
-  Tooltip
-} from '@skyie/ui';
+import { Button, Toggle, Slider, Chip, Badge, Alert, Toast, Modal, Tooltip } from '@skyie/ui';
 
 import {
   EditIcon,
@@ -932,7 +922,7 @@ import {
   WarningIcon,
   ColorPaletteIcon,
   TypeIcon,
-  VoiceIcon
+  VoiceIcon,
 } from '@skyie/icons';
 ```
 

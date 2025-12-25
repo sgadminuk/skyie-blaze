@@ -216,7 +216,7 @@ jobs:
         env:
           CI: true
           GOLDEN_TESTS_PATH: backend/tests/golden/golden-tests.yaml
-          STRUCTURAL_ONLY: true  # Structural validation only until enforcement engine is implemented
+          STRUCTURAL_ONLY: true # Structural validation only until enforcement engine is implemented
 
       - name: Upload golden test results
         if: always()

@@ -25,7 +25,8 @@ const path = require('path');
 const yaml = require('yaml');
 
 // Check if we're in structural-only mode (for foundation commits without enforcement engine)
-const STRUCTURAL_ONLY = process.env.STRUCTURAL_ONLY === 'true' || process.env.CI_FOUNDATION === 'true';
+const STRUCTURAL_ONLY =
+  process.env.STRUCTURAL_ONLY === 'true' || process.env.CI_FOUNDATION === 'true';
 
 // ANSI colors
 const colors = {
@@ -38,8 +39,7 @@ const colors = {
   bold: '\x1b[1m',
 };
 
-const GOLDEN_TESTS_PATH =
-  process.env.GOLDEN_TESTS_PATH || 'backend/tests/golden/golden-tests.yaml';
+const GOLDEN_TESTS_PATH = process.env.GOLDEN_TESTS_PATH || 'backend/tests/golden/golden-tests.yaml';
 const REPORTS_DIR = 'reports/golden-tests';
 
 const stats = {
@@ -370,11 +370,15 @@ function runStructuralValidation(data) {
 
     if (errors.length === 0) {
       stats.passed++;
-      console.log(`  ${colors.green}[OK]${colors.reset} ${tc.id || `test_${index}`}: structure valid`);
+      console.log(
+        `  ${colors.green}[OK]${colors.reset} ${tc.id || `test_${index}`}: structure valid`
+      );
     } else {
       stats.failed++;
       structuralErrors++;
-      console.log(`  ${colors.red}[ERR]${colors.reset} ${tc.id || `test_${index}`}: ${errors.join(', ')}`);
+      console.log(
+        `  ${colors.red}[ERR]${colors.reset} ${tc.id || `test_${index}`}: ${errors.join(', ')}`
+      );
     }
   });
 
@@ -382,10 +386,15 @@ function runStructuralValidation(data) {
   if (data.metadata) {
     console.log(`\n${colors.blue}Metadata:${colors.reset}`);
     console.log(`  Version: ${data.metadata.version || 'not specified'}`);
-    console.log(`  Total test cases declared: ${data.metadata.total_test_cases || 'not specified'}`);
+    console.log(
+      `  Total test cases declared: ${data.metadata.total_test_cases || 'not specified'}`
+    );
     console.log(`  Actual test cases found: ${data.test_cases.length}`);
 
-    if (data.metadata.total_test_cases && data.metadata.total_test_cases !== data.test_cases.length) {
+    if (
+      data.metadata.total_test_cases &&
+      data.metadata.total_test_cases !== data.test_cases.length
+    ) {
       console.log(`  ${colors.yellow}Warning: metadata count mismatch${colors.reset}`);
     }
   }

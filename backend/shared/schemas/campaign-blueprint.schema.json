@@ -4,7 +4,15 @@
   "title": "Campaign Blueprint",
   "description": "Machine-enforceable specification for marketing campaign strategy and execution",
   "type": "object",
-  "required": ["$schema", "id", "metadata", "brand_genome_ref", "objective", "timing", "channel_strategy"],
+  "required": [
+    "$schema",
+    "id",
+    "metadata",
+    "brand_genome_ref",
+    "objective",
+    "timing",
+    "channel_strategy"
+  ],
   "additionalProperties": false,
 
   "properties": {
@@ -124,7 +132,14 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["awareness", "consideration", "conversion", "retention", "advocacy", "engagement"]
+          "enum": [
+            "awareness",
+            "consideration",
+            "conversion",
+            "retention",
+            "advocacy",
+            "engagement"
+          ]
         },
         "description": {
           "type": "string",
@@ -155,14 +170,39 @@
         "metric": {
           "type": "string",
           "enum": [
-            "impressions", "reach", "views", "video_views",
-            "clicks", "website_visits", "page_views", "time_on_site",
-            "engagements", "engagement_rate", "likes", "comments", "shares", "saves",
-            "leads", "signups", "registrations", "downloads",
-            "conversions", "purchases", "revenue", "roas", "aov",
-            "ctr", "cpc", "cpm", "cpa", "cpl",
-            "followers", "subscriber_growth",
-            "nps", "csat", "retention_rate",
+            "impressions",
+            "reach",
+            "views",
+            "video_views",
+            "clicks",
+            "website_visits",
+            "page_views",
+            "time_on_site",
+            "engagements",
+            "engagement_rate",
+            "likes",
+            "comments",
+            "shares",
+            "saves",
+            "leads",
+            "signups",
+            "registrations",
+            "downloads",
+            "conversions",
+            "purchases",
+            "revenue",
+            "roas",
+            "aov",
+            "ctr",
+            "cpc",
+            "cpm",
+            "cpa",
+            "cpl",
+            "followers",
+            "subscriber_growth",
+            "nps",
+            "csat",
+            "retention_rate",
             "custom"
           ]
         },
@@ -537,7 +577,15 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["discount", "free_trial", "free_shipping", "bonus", "limited_time", "exclusive", "bundle"]
+          "enum": [
+            "discount",
+            "free_trial",
+            "free_shipping",
+            "bonus",
+            "limited_time",
+            "exclusive",
+            "bundle"
+          ]
         },
         "description": {
           "type": "string"
@@ -588,11 +636,25 @@
         "channel": {
           "type": "string",
           "enum": [
-            "linkedin", "instagram", "facebook", "twitter", "tiktok", "youtube",
-            "email", "sms", "whatsapp",
-            "google_ads", "meta_ads", "linkedin_ads", "tiktok_ads",
-            "blog", "website", "landing_page",
-            "podcast", "webinar", "pr"
+            "linkedin",
+            "instagram",
+            "facebook",
+            "twitter",
+            "tiktok",
+            "youtube",
+            "email",
+            "sms",
+            "whatsapp",
+            "google_ads",
+            "meta_ads",
+            "linkedin_ads",
+            "tiktok_ads",
+            "blog",
+            "website",
+            "landing_page",
+            "podcast",
+            "webinar",
+            "pr"
           ]
         },
         "role": {
@@ -679,7 +741,16 @@
         },
         "status": {
           "type": "string",
-          "enum": ["planned", "generating", "generated", "review", "approved", "scheduled", "published", "failed"]
+          "enum": [
+            "planned",
+            "generating",
+            "generated",
+            "review",
+            "approved",
+            "scheduled",
+            "published",
+            "failed"
+          ]
         },
         "asset_ref": {
           "type": "string",
@@ -718,7 +789,13 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["brand_genome", "campaign_brief", "top_performers", "competitor_analysis", "trending_topics"]
+            "enum": [
+              "brand_genome",
+              "campaign_brief",
+              "top_performers",
+              "competitor_analysis",
+              "trending_topics"
+            ]
           }
         }
       }
@@ -786,7 +863,14 @@
         },
         "attribution_model": {
           "type": "string",
-          "enum": ["last_click", "first_click", "linear", "time_decay", "position_based", "data_driven"]
+          "enum": [
+            "last_click",
+            "first_click",
+            "linear",
+            "time_decay",
+            "position_based",
+            "data_driven"
+          ]
         },
         "tracking_pixels": {
           "type": "array",
